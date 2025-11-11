@@ -21,6 +21,14 @@ export const MOCK_CITIZEN_PROFILE: Profile = {
     role: 'citizen',
 };
 
+export const MOCK_CITIZEN_2_PROFILE: Profile = {
+    id: 'd4e5f6a7-b8c9-0123-4567-890abcdef2',
+    name: 'Sita Devi Rai',
+    phone: '+9779860000000',
+    email: 'sita.rai@email.com',
+    role: 'citizen',
+};
+
 export const MOCK_ADMIN_PROFILE: Profile = {
     id: 'b2c3d4e5-f6a7-8901-2345-67890abcdef1',
     name: 'Hari Prasad Sharma',
@@ -110,7 +118,7 @@ export const MOCK_WALLET: WalletDocument[] = [
         docType: 'citizenship',
         fileName: 'citizenship_maya.pdf',
         hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
-        verified: true,
+        verificationStatus: 'verified',
         storage_path: `${MOCK_CITIZEN_PROFILE.id}/citizenship_maya.pdf`,
     },
     {
@@ -119,8 +127,39 @@ export const MOCK_WALLET: WalletDocument[] = [
         docType: 'driving_license',
         fileName: 'license_maya.jpg',
         hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
-        verified: true,
+        verificationStatus: 'verified',
         storage_path: `${MOCK_CITIZEN_PROFILE.id}/license_maya.jpg`,
+    },
+     {
+        id: 'doc-3',
+        user_id: MOCK_CITIZEN_PROFILE.id,
+        docType: 'passport',
+        fileName: 'passport_maya.pdf',
+        hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+        verificationStatus: 'pending',
+        storage_path: `${MOCK_CITIZEN_PROFILE.id}/passport_maya.pdf`,
+    },
+];
+
+// --- MOCK WALLET DOCUMENTS for Sita Rai ---
+export const MOCK_WALLET_SITA: WalletDocument[] = [
+    {
+        id: 'doc-4',
+        user_id: MOCK_CITIZEN_2_PROFILE.id,
+        docType: 'citizenship',
+        fileName: 'citizenship_sita.png',
+        hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+        verificationStatus: 'pending',
+        storage_path: `${MOCK_CITIZEN_2_PROFILE.id}/citizenship_sita.png`,
+    },
+    {
+        id: 'doc-5',
+        user_id: MOCK_CITIZEN_2_PROFILE.id,
+        docType: 'national_id',
+        fileName: 'nid_sita.jpg',
+        hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6',
+        verificationStatus: 'rejected',
+        storage_path: `${MOCK_CITIZEN_2_PROFILE.id}/nid_sita.jpg`,
     },
 ];
 
@@ -170,3 +209,6 @@ export const MOCK_APPLICATIONS: Application[] = [
         ],
     },
 ];
+
+export const MOCK_ALL_CITIZENS = [MOCK_CITIZEN_PROFILE, MOCK_CITIZEN_2_PROFILE];
+export const MOCK_ALL_WALLET_DOCS = [...MOCK_WALLET, ...MOCK_WALLET_SITA];

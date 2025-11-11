@@ -1,12 +1,38 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Service, Application } from '../types';
-import { NepalFlagIcon } from '../components/icons';
+import { Service, Application, WalletDocument } from '../types';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon } from '../components/icons';
+
+const StatusBadge: React.FC<{ status: WalletDocument['verificationStatus']}> = ({ status }) => {
+    const statusMap = {
+        verified: { text: 'Verified', icon: <CheckCircleIcon className="w-4 h-4" />, bg: 'bg-green-100', textColor: 'text-green-800' },
+        pending: { text: 'Pending', icon: <AlertTriangleIcon className="w-4 h-4" />, bg: 'bg-yellow-100', textColor: 'text-yellow-800' },
+        rejected: { text: 'Rejected', icon: <XCircleIcon className="w-4 h-4" />, bg: 'bg-red-100', textColor: 'text-red-800' },
+    }
+    const currentStatus = statusMap[status];
+
+    return (
+        <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${currentStatus.bg} ${currentStatus.textColor}`}>
+            {currentStatus.icon}
+            <span>{currentStatus.text}</span>
+        </div>
+    );
+};
+
 
 const AdminPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
-    const { applications, services, user, profile, wallet } = state;
+    const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
+    const [selectedUserId, setSelectedUserId] = useState<string>(allCitizenProfiles[0]?.id || '');
+
+    const systemHealthData = [
+        { name: 'Document Verification', status: 'Operational' },
+        { name: 'Application Processing', status: 'Operational' },
+        { name: 'Notification Service', status: 'Degraded' },
+        { name: 'Database Connectivity', status: 'Operational' },
+        { name: 'Citizen Authentication', status: 'Operational' },
+    ];
     
     const filteredApplications = useMemo(() => 
         applications.filter(app => app.serviceId === selectedServiceId),
@@ -18,6 +44,44 @@ const AdminPortal: React.FC = () => {
         [filteredApplications]
     );
 
+    const selectedUserDocs = useMemo(() => 
+        allWalletDocuments.filter(doc => doc.user_id === selectedUserId),
+        [allWalletDocuments, selectedUserId]
+    );
+    
+    const kpis = useMemo(() => {
+        const activeUsers = allCitizenProfiles.length;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const processedToday = applications.filter(app => {
+            const lastStatus = app.statusHistory[app.statusHistory.length - 1];
+            return (lastStatus.status === 'Approved' || lastStatus.status === 'Called') && lastStatus.timestamp >= today;
+        }).length;
+
+        const approvedApps = applications.filter(app => 
+            app.statusHistory.some(h => h.status === 'Approved')
+        );
+
+        let avgApprovalTime = 'N/A';
+        if (approvedApps.length > 0) {
+            const totalTime = approvedApps.reduce((acc, app) => {
+                const submittedTime = app.statusHistory.find(h => h.status === 'Submitted')?.timestamp;
+                const approvedTime = app.statusHistory.find(h => h.status === 'Approved')?.timestamp;
+                if (submittedTime && approvedTime) {
+                    return acc + (approvedTime.getTime() - submittedTime.getTime());
+                }
+                return acc;
+            }, 0);
+            const avgTimeMs = totalTime / approvedApps.length;
+            const avgTimeDays = (avgTimeMs / (1000 * 60 * 60 * 24)).toFixed(1);
+            avgApprovalTime = `${avgTimeDays} days`;
+        }
+        
+        return { activeUsers, processedToday, avgApprovalTime };
+    }, [allCitizenProfiles, applications]);
+
+
     const handleCallNext = () => {
         const nextInQueue = queue[0];
         if (nextInQueue && nextInQueue.token) {
@@ -25,22 +89,14 @@ const AdminPortal: React.FC = () => {
         }
     };
 
-    const handleVerifyDocument = () => {
-        // In a real app, you would select a user/document to verify.
-        // Here we just verify the first unverified doc of the mock user for demo.
-        // Fix: Corrected property access from state.user to state.profile and state.wallet
-        if(profile?.role === 'citizen' && wallet.length > 0) {
-            const docToVerify = wallet.find(d => !d.verified);
-            if(docToVerify) {
-                dispatch({ type: 'VERIFY_DOCUMENT', payload: docToVerify.id });
-                alert(`Document ${docToVerify.fileName} for user ${profile.name} has been verified.`);
-            } else {
-                alert('All documents for the demo user are already verified.');
-            }
-        } else {
-            alert('This demo action only works when a citizen is logged in. Please log in as a citizen to test this.')
-        }
-    }
+    const handleVerify = (documentId: string) => {
+        dispatch({ type: 'VERIFY_DOCUMENT', payload: { documentId } });
+    };
+    
+    const handleReject = (documentId: string) => {
+        dispatch({ type: 'REJECT_DOCUMENT', payload: { documentId } });
+    };
+
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -86,7 +142,7 @@ const AdminPortal: React.FC = () => {
                                 {queue.length > 0 ? queue.map((app, index) => (
                                     <tr key={app.id} className={index === 0 ? 'bg-blue-50' : ''}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.token}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.userId}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.userId.substring(0,8)}...</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index === 0 ? 'Now Serving' : `Waiting (${index})`}</td>
                                     </tr>
                                 )) : (
@@ -101,18 +157,76 @@ const AdminPortal: React.FC = () => {
 
                 {/* Right side: Other Admin Actions */}
                 <div className="space-y-6">
+                     <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="text-lg font-bold mb-4">Key Performance Indicators</h3>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <UsersIcon className="w-8 h-8 mx-auto text-blue-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.activeUsers}</p>
+                                <p className="text-xs text-gray-500">Active Users</p>
+                            </div>
+                            <div>
+                                <FileCheckIcon className="w-8 h-8 mx-auto text-green-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.processedToday}</p>
+                                <p className="text-xs text-gray-500">Processed Today</p>
+                            </div>
+                            <div>
+                                <HourglassIcon className="w-8 h-8 mx-auto text-yellow-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.avgApprovalTime}</p>
+                                <p className="text-xs text-gray-500">Avg. Approval</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="bg-white p-6 rounded-xl shadow-md">
                         <h3 className="text-lg font-bold mb-4">Document Verification</h3>
-                        <p className="text-sm text-gray-600 mb-4">Review and verify citizen-uploaded documents. This is a demo action.</p>
-                        <button onClick={handleVerifyDocument} className="w-full bg-[#003893] text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-800 transition">
-                            Verify Next Document
-                        </button>
+                        <p className="text-sm text-gray-600 mb-4">Select a citizen to review their documents.</p>
+                        
+                        <select 
+                            value={selectedUserId}
+                            onChange={(e) => setSelectedUserId(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md mb-4"
+                            disabled={allCitizenProfiles.length === 0}
+                        >
+                             {allCitizenProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+
+                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                             {selectedUserDocs.length > 0 ? selectedUserDocs.map(doc => (
+                                <div key={doc.id} className="border border-gray-200 p-3 rounded-lg bg-gray-50/50">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold text-sm text-gray-800">{doc.fileName}</p>
+                                            <p className="text-xs text-gray-500 capitalize">{doc.docType.replace(/_/g, ' ')}</p>
+                                        </div>
+                                        <StatusBadge status={doc.verificationStatus} />
+                                    </div>
+                                    {doc.verificationStatus === 'pending' && (
+                                        <div className="mt-3 pt-3 border-t border-gray-200 flex space-x-2">
+                                            <button onClick={() => handleVerify(doc.id)} className="flex-1 bg-green-600 text-white text-sm font-bold py-1.5 px-3 rounded-md hover:bg-green-700 transition">
+                                                Verify
+                                            </button>
+                                            <button onClick={() => handleReject(doc.id)} className="flex-1 bg-red-600 text-white text-sm font-bold py-1.5 px-3 rounded-md hover:bg-red-700 transition">
+                                                Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )) : <p className="text-sm text-center text-gray-500 py-4">No documents found for this user.</p>}
+                        </div>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold mb-4">System Status</h3>
-                         <div className="flex items-center text-green-600">
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span>All Systems Operational</span>
+                        <h3 className="text-lg font-bold mb-4">System Health</h3>
+                        <div className="space-y-3">
+                            {systemHealthData.map(service => (
+                                <div key={service.name} className="flex justify-between items-center text-sm">
+                                    <p className="text-gray-600">{service.name}</p>
+                                    <div className={`flex items-center space-x-2 font-medium ${service.status === 'Operational' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                        <div className={`w-2.5 h-2.5 rounded-full ${service.status === 'Operational' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                                        <span>{service.status}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
