@@ -1,75 +1,190 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
-import { NepalFlagIcon } from '../components/icons';
-import { MOCK_CITIZEN_PROFILE, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
+import { NepalFlagIcon, KeyIcon, UsersIcon } from '../components/icons';
+import { MOCK_ADMIN_PROFILE, MOCK_CITIZEN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
 
-// Fix: Add props interface to accept `intendedView` prop passed from App.tsx.
 interface LoginPageProps {
     intendedView?: 'citizen' | 'admin' | 'kiosk';
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ intendedView }) => {
     const { dispatch } = useContext(AppContext);
+    const [mode, setMode] = useState<'login' | 'signup' | 'forgotPassword'>('login');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleLogin = (role: 'citizen' | 'admin' | 'kiosk') => {
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (mode === 'login') {
+            let role: 'citizen' | 'admin' | 'kiosk' = 'citizen';
+            if (email === MOCK_ADMIN_PROFILE.email) role = 'admin';
+            if (email === MOCK_KIOSK_PROFILE.email) role = 'kiosk';
+            dispatch({ type: 'LOGIN', payload: { email, role } });
+        } else if (mode === 'signup') {
+            dispatch({ type: 'SIGNUP', payload: { name, email } });
+        } else { // forgotPassword
+            dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'If an account with that email exists, a password reset link has been sent.', type: 'info' } });
+            setMode('login');
+        }
+    };
+    
+    const handleDemoLogin = (role: 'citizen' | 'admin' | 'kiosk') => {
         let profile;
         switch (role) {
+            case 'citizen':
+                profile = MOCK_CITIZEN_PROFILE;
+                break;
             case 'admin':
                 profile = MOCK_ADMIN_PROFILE;
                 break;
             case 'kiosk':
                 profile = MOCK_KIOSK_PROFILE;
                 break;
-            case 'citizen':
-            default:
-                profile = MOCK_CITIZEN_PROFILE;
-                break;
         }
-
-        // Mock a Supabase user object
-        const mockUser = {
-            id: profile.id,
-            email: profile.email,
-        };
-
-        dispatch({
-            type: 'SET_SESSION',
-            payload: { user: mockUser as any, profile }
-        });
+        dispatch({ type: 'LOGIN', payload: { email: profile.email!, role } });
     };
+    
+    const getTitle = () => {
+        if(mode === 'login') return 'Welcome Back';
+        if(mode === 'signup') return 'Create Account';
+        return 'Reset Password';
+    }
+    
+     const getSubtitle = () => {
+        if(mode === 'login') return 'Log in to access your services.';
+        if(mode === 'signup') return 'Join to streamline your government interactions.';
+        return 'Enter your email to receive a reset link.';
+    }
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
             <div className="absolute top-4 left-4">
                 <button onClick={() => dispatch({ type: 'SET_VIEW', payload: 'landing' })} className="text-sm font-medium text-gray-600 hover:text-[#003893]">← Back to Home</button>
             </div>
-            <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">
                 <div className="flex justify-center items-center space-x-3 mb-4">
                     <NepalFlagIcon className="h-8 w-auto" />
                     <h1 className="text-xl font-bold text-gray-800">Nagarik Card</h1>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-700 mb-6">Demo Login</h2>
-                <p className="text-gray-500 mb-8">Select a role to enter the portal. No password needed.</p>
-                <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-center text-gray-700 mb-2">
+                    {getTitle()}
+                </h2>
+                <p className="text-center text-gray-500 mb-8 text-sm">
+                    {getSubtitle()}
+                </p>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {mode === 'signup' && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#003893] focus:border-[#003893]"
+                                placeholder="Maya Kumari Thapa"
+                            />
+                        </div>
+                    )}
+                    
+                    {mode !== 'login' || (
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#003893] focus:border-[#003893]"
+                                placeholder="maya.thapa@email.com"
+                            />
+                        </div>
+                    )}
+                    
+                     {mode === 'forgotPassword' && (
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#003893] focus:border-[#003893]"
+                                placeholder="Enter your registered email"
+                            />
+                        </div>
+                    )}
+
+                    {mode !== 'forgotPassword' && (
+                        <div>
+                            <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium text-gray-700">Password</label>
+                                {mode === 'login' && (
+                                    <button type="button" onClick={() => setMode('forgotPassword')} className="text-sm font-medium text-[#003893] hover:underline">
+                                        Forgot?
+                                    </button>
+                                )}
+                            </div>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#003893] focus:border-[#003893]"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                    )}
+
                     <button
-                        onClick={() => handleLogin('citizen')}
+                        type="submit"
                         className="w-full bg-[#C51E3A] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-red-700 transition"
                     >
-                        Log in as Citizen (Maya Thapa)
+                        {mode === 'login' && 'Log In'}
+                        {mode === 'signup' && 'Sign Up'}
+                        {mode === 'forgotPassword' && 'Send Reset Link'}
                     </button>
-                    <button
-                        onClick={() => handleLogin('admin')}
-                        className="w-full bg-[#003893] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-blue-800 transition"
-                    >
-                        Log in as Admin (Hari Sharma)
-                    </button>
-                    <button
-                        onClick={() => handleLogin('kiosk')}
-                        className="w-full bg-gray-700 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-gray-800 transition"
-                    >
-                        Log in as Kiosk User
-                    </button>
+                </form>
+                
+                <div className="text-center mt-6">
+                    {mode === 'forgotPassword' ? (
+                        <button onClick={() => setMode('login')} className="text-sm font-medium text-[#003893] hover:underline">
+                            Back to Login
+                        </button>
+                    ) : (
+                        <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-sm font-medium text-[#003893] hover:underline">
+                            {mode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
+                        </button>
+                    )}
                 </div>
+                
+                {mode !== 'forgotPassword' && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                        <p className="text-center text-xs text-gray-500 mb-3">For demonstration purposes:</p>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => handleDemoLogin('citizen')}
+                                className="w-full flex-1 bg-gray-200 text-gray-700 font-bold text-sm py-2 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2"
+                            >
+                            <UsersIcon className="w-4 h-4" /> <span>Citizen</span>
+                            </button>
+                            <button
+                                onClick={() => handleDemoLogin('admin')}
+                                className="w-full flex-1 bg-gray-200 text-gray-700 font-bold text-sm py-2 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2"
+                            >
+                            <UsersIcon className="w-4 h-4" /> <span>Admin</span>
+                            </button>
+                            <button
+                                onClick={() => handleDemoLogin('kiosk')}
+                                className="w-full flex-1 bg-gray-200 text-gray-700 font-bold text-sm py-2 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2"
+                            >
+                                <KeyIcon className="w-4 h-4" /> <span>Kiosk</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

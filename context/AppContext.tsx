@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
 import { Profile, Application, WalletDocument, Service } from '../types';
-import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS } from '../constants';
+import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login';
@@ -28,16 +28,20 @@ type Action =
   | { type: 'SET_VIEW'; payload: View }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SESSION'; payload: { user: SupabaseUser | null; profile: Profile | null } }
+  | { type: 'LOGIN'; payload: { email: string, role: 'citizen' | 'admin' | 'kiosk' } }
+  | { type: 'SIGNUP'; payload: { name: string; email: string } }
   | { type: 'SET_SERVICES'; payload: Service[] }
   | { type: 'SET_WALLET'; payload: WalletDocument[] }
   | { type: 'UPSERT_WALLET_DOCUMENT'; payload: WalletDocument }
   | { type: 'SET_APPLICATIONS'; payload: Application[] }
   | { type: 'LOGOUT' }
   | { type: 'UPSERT_APPLICATION'; payload: Application }
+  | { type: 'UPSERT_SERVICE'; payload: Service }
   | { type: 'ADD_NOTIFICATION'; payload: Omit<Notification, 'id'> }
   | { type: 'REMOVE_NOTIFICATION'; payload: number }
   | { type: 'CALL_NEXT_TOKEN'; payload: string }
   | { type: 'SET_ALL_CITIZEN_DATA'; payload: { profiles: Profile[], documents: WalletDocument[] } }
+  | { type: 'UPDATE_PROFILE'; payload: Profile }
   | { type: 'VERIFY_DOCUMENT'; payload: { documentId: string } }
   | { type: 'REJECT_DOCUMENT'; payload: { documentId: string } };
 
@@ -64,6 +68,56 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return { ...state, user: action.payload.user, profile: action.payload.profile, view: action.payload.profile ? action.payload.profile.role : 'landing', isLoading: false };
     case 'LOGOUT':
         return { ...initialState, isLoading: false, view: 'landing', services: state.services };
+    case 'LOGIN': {
+        const { email, role } = action.payload;
+        let profile: Profile | undefined;
+        let allProfiles: Profile[] = [ ...state.allCitizenProfiles, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE ];
+
+        profile = allProfiles.find(p => p.email === email && p.role === role);
+
+        if (profile) {
+            const mockUser = { id: profile.id, email: profile.email };
+            return {
+                ...state,
+                user: mockUser as any,
+                profile,
+                view: profile.role,
+                notifications: [...state.notifications, { id: Date.now(), message: `Welcome back, ${profile.name}!`, type: 'success'}]
+            };
+        } else {
+             return {
+                ...state,
+                notifications: [...state.notifications, { id: Date.now(), message: 'Login failed. User not found.', type: 'info'}]
+            };
+        }
+    }
+    case 'SIGNUP': {
+        const { name, email } = action.payload;
+        if(state.allCitizenProfiles.some(p => p.email === email)) {
+            return {
+                ...state,
+                notifications: [...state.notifications, { id: Date.now(), message: 'An account with this email already exists.', type: 'info'}]
+            };
+        }
+        
+        const newProfile: Profile = {
+            id: `user-${Date.now()}`,
+            name,
+            email,
+            role: 'citizen',
+        };
+
+        const mockUser = { id: newProfile.id, email: newProfile.email };
+
+        return {
+            ...state,
+            user: mockUser as any,
+            profile: newProfile,
+            allCitizenProfiles: [...state.allCitizenProfiles, newProfile],
+            view: 'citizen',
+            notifications: [...state.notifications, { id: Date.now(), message: `Welcome, ${name}! Your account has been created.`, type: 'success'}]
+        };
+    }
     case 'SET_SERVICES':
         return { ...state, services: action.payload };
     case 'SET_WALLET':
@@ -101,6 +155,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
             ].sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()),
             notifications: newNotifications,
         };
+    case 'UPSERT_SERVICE': {
+        const isUpdate = state.services.some(s => s.id === action.payload.id);
+        const newServices = isUpdate
+            ? state.services.map(s => s.id === action.payload.id ? action.payload : s)
+            : [...state.services, action.payload];
+        
+        return {
+            ...state,
+            services: newServices,
+            notifications: [
+                ...state.notifications,
+                { id: Date.now(), message: `Service "${action.payload.name}" has been ${isUpdate ? 'updated' : 'created'}.`, type: 'success' }
+            ]
+        };
+    }
     case 'ADD_NOTIFICATION':
         return { ...state, notifications: [...state.notifications, { id: Date.now(), ...action.payload }] };
     case 'REMOVE_NOTIFICATION':
@@ -135,6 +204,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
     case 'SET_ALL_CITIZEN_DATA':
         return { ...state, allCitizenProfiles: action.payload.profiles, allWalletDocuments: action.payload.documents };
+    case 'UPDATE_PROFILE': {
+        const updatedProfile = action.payload;
+        return {
+            ...state,
+            allCitizenProfiles: state.allCitizenProfiles.map(p =>
+                p.id === updatedProfile.id ? updatedProfile : p
+            ),
+            // Also update the main profile if the admin is editing themselves (edge case)
+            profile: state.profile?.id === updatedProfile.id ? updatedProfile : state.profile,
+            notifications: [
+                ...state.notifications,
+                { id: Date.now(), message: `Profile for ${updatedProfile.name} has been updated.`, type: 'success' }
+            ]
+        }
+    }
     case 'VERIFY_DOCUMENT': {
         const { documentId } = action.payload;
         const updateDoc = (doc: WalletDocument) => doc.id === documentId ? { ...doc, verificationStatus: 'verified' as const } : doc;
@@ -183,20 +267,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
+    // This pre-populates admin-viewable data
+    dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
+        profiles: MOCK_ALL_CITIZENS,
+        documents: MOCK_ALL_WALLET_DOCS
+    }});
     dispatch({ type: 'SET_LOADING', payload: false });
   }, []);
 
   useEffect(() => {
     if (state.profile) {
         if (state.profile.role === 'citizen') {
-            dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
-            dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
+            // Check if this is the mock user to load their data
+            if (state.profile.id === 'a1b2c3d4-e5f6-7890-1234-567890abcdef') {
+                dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
+                dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
+            } else {
+                 // It's a newly signed-up user
+                dispatch({ type: 'SET_WALLET', payload: [] });
+                dispatch({ type: 'SET_APPLICATIONS', payload: [] });
+            }
         } else if(state.profile.role === 'admin') {
             dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-            dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
-                profiles: MOCK_ALL_CITIZENS,
-                documents: MOCK_ALL_WALLET_DOCS
-            }});
+            // Admin data already loaded in initial effect
         } else { // Kiosk
             dispatch({ type: 'SET_WALLET', payload: [] });
             dispatch({ type: 'SET_APPLICATIONS', payload: [] });

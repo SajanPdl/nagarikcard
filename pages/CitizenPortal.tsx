@@ -1,14 +1,17 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Profile, WalletDocument, Service, Application } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon } from '../components/icons';
+import { Profile, WalletDocument, Service, Application, Office } from '../types';
+import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
 import PaymentModal from '../components/PaymentModal';
+import SathiAiModal from '../components/SathiAiModal';
+import DigitalWalletPage from '../components/DigitalWalletPage';
+import UploadDocumentModal from '../components/UploadDocumentModal';
 
 // --- Helper Functions ---
-const sha256 = async (file: File): Promise<string> => {
+export const sha256 = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -16,56 +19,134 @@ const sha256 = async (file: File): Promise<string> => {
 };
 
 // --- Sub-Components ---
-
-const Dashboard: React.FC<{ profile: Profile, wallet: WalletDocument[], onNavigate: (page: CitizenPage) => void, onShowQr: () => void }> = ({ profile, wallet, onNavigate, onShowQr }) => {
+const Dashboard: React.FC<{ 
+    profile: Profile, 
+    wallet: WalletDocument[], 
+    notifications: any[],
+    offices: Office[],
+    onNavigate: (page: CitizenPage) => void, 
+    onShowQr: () => void 
+}> = ({ profile, wallet, notifications, offices, onNavigate, onShowQr }) => {
+    const [privacyMode, setPrivacyMode] = useState(false);
     const citizenDoc = wallet.find(doc => doc.docType === 'citizenship');
-    
+
     const getStatusInfo = (status: WalletDocument['verificationStatus']) => {
         switch (status) {
-            case 'verified':
-                return { text: 'Verified', icon: <CheckCircleIcon className="w-5 h-5 text-green-400" />, color: 'text-green-400' };
-            case 'pending':
-                return { text: 'Pending Review', icon: <AlertTriangleIcon className="w-5 h-5 text-yellow-400" />, color: 'text-yellow-400' };
-            case 'rejected':
-                return { text: 'Rejected', icon: <XCircleIcon className="w-5 h-5 text-red-400" />, color: 'text-red-400' };
-            default:
-                return { text: 'Unknown', icon: null, color: '' };
+            case 'verified': return { text: 'Verified', icon: <CheckCircleIcon className="w-4 h-4 text-green-400" />, color: 'text-green-300' };
+            case 'pending': return { text: 'Pending', icon: <AlertTriangleIcon className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-300' };
+            case 'rejected': return { text: 'Rejected', icon: <XCircleIcon className="w-4 h-4 text-red-400" />, color: 'text-red-300' };
+            default: return { text: 'Unknown', icon: null, color: '' };
         }
     };
 
-    const citizenStatus = citizenDoc ? getStatusInfo(citizenDoc.verificationStatus) : null;
+    const citizenStatus = citizenDoc ? getStatusInfo(citizenDoc.verificationStatus) : { text: 'Not Uploaded', icon: <AlertTriangleIcon className="w-4 h-4 text-yellow-400"/>, color: 'text-yellow-300' };
+    
+    const getShortName = (name: string) => {
+        const parts = name.split(' ');
+        if (parts.length > 1) {
+            return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+        }
+        return name;
+    };
+    
+    const getCrowdStatus = (officeName: string) => {
+        const hash = officeName.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+        const status = ['Low', 'Moderate', 'High'];
+        return status[Math.abs(hash) % status.length];
+    }
+
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold mb-6">My Digital Wallet</h2>
-            <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-2xl max-w-md mx-auto">
+        <div className="space-y-8">
+            {/* Digital ID Card */}
+            <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-2xl max-w-2xl mx-auto">
                 <div className="flex justify-between items-start">
-                    <div>
-                        <p className="text-xl font-bold">{profile.name}</p>
-                        <p className="text-sm opacity-80 mt-1">Nagarik Card</p>
-                    </div>
-                    <NepalFlagIcon className="w-10 h-auto" />
-                </div>
-                {citizenDoc && citizenStatus ? (
-                    <div className="mt-6">
-                        <div className={`flex items-center space-x-2 text-sm ${citizenStatus.color}`}>
-                            {citizenStatus.icon}
-                            <span>Citizenship {citizenStatus.text}</span>
+                    <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                            <IdCardIcon className="w-8 h-8 text-white" />
                         </div>
-                        <p className="text-xs font-mono break-all mt-2 opacity-60">Hash: {citizenDoc.hash}</p>
+                        <div>
+                             <p className="text-2xl font-bold">{privacyMode ? getShortName(profile.name) : profile.name}</p>
+                             <div 
+                                 className="flex items-center space-x-2 mt-1 cursor-pointer"
+                                 onClick={() => onNavigate('wallet')}
+                             >
+                                {citizenStatus.icon}
+                                <span className={`text-sm font-medium ${citizenStatus.color}`}>{citizenStatus.text} Citizenship</span>
+                             </div>
+                        </div>
                     </div>
-                ) : (
-                    <p className="mt-6 text-yellow-300">Please upload your Citizenship.</p>
-                )}
+                     <div className="flex flex-col items-end space-y-2">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-xs font-medium">{privacyMode ? 'Show' : 'Hide'}</span>
+                            <button onClick={() => setPrivacyMode(!privacyMode)} className={`w-10 h-5 flex items-center rounded-full transition-colors ${privacyMode ? 'bg-white/30' : 'bg-black/20'}`}>
+                                <span className={`w-4 h-4 bg-white rounded-full transform transition-transform ${privacyMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
+                        </div>
+                        <button onClick={onShowQr} className="mt-2 text-sm bg-white/20 hover:bg-white/30 font-semibold py-1 px-3 rounded-lg flex items-center space-x-1.5">
+                            <QrCodeIcon className="w-4 h-4"/>
+                            <span>Show QR</span>
+                        </button>
+                     </div>
+                </div>
             </div>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                <button onClick={onShowQr} className="p-4 bg-white rounded-xl shadow-md text-left font-semibold text-gray-700 hover:bg-gray-50 transition">Show My QR ID</button>
-                <button onClick={() => onNavigate('service-catalog')} className="p-4 bg-white rounded-xl shadow-md text-left font-semibold text-gray-700 hover:bg-gray-50 transition">Apply for a Service</button>
-                <button onClick={() => onNavigate('my-applications')} className="p-4 bg-white rounded-xl shadow-md text-left font-semibold text-gray-700 hover:bg-gray-50 transition col-span-1 sm:col-span-2">Track My Applications</button>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                <QuickAction icon={<BriefcaseIcon />} label="Apply for Service" onClick={() => onNavigate('service-catalog')} />
+                <QuickAction icon={<HourglassIcon />} label="Track Applications" onClick={() => onNavigate('my-applications')} />
+                <QuickAction icon={<MapPinIcon />} label="Book Visit/Token" onClick={() => alert("Coming soon!")}/>
+                <QuickAction icon={<WalletIcon />} label="Digital Documents" onClick={() => onNavigate('wallet')} />
+            </div>
+
+            {/* Information Panels */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                 <div className="bg-white p-6 rounded-xl shadow-md">
+                     <h3 className="font-bold text-lg flex items-center mb-4"><MapPinIcon className="w-5 h-5 mr-2 text-blue-500" /> Nearby Offices</h3>
+                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                         {offices.slice(0, 3).map(office => {
+                             const crowd = getCrowdStatus(office.name);
+                             return (
+                                <div key={office.id} className="text-sm border-b border-gray-100 pb-2">
+                                    <p className="font-semibold text-gray-800">{office.name}</p>
+                                    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                                        <span>Status: <span className="font-bold text-green-600">Open</span></span>
+                                        <span>Queue: <span className="font-bold text-gray-800">102 / 125</span></span>
+                                        <span>Crowd: <span className={`font-bold ${crowd === 'Low' ? 'text-green-600' : crowd === 'High' ? 'text-red-600' : 'text-yellow-600'}`}>{crowd}</span></span>
+                                    </div>
+                                </div>
+                             )
+                         })}
+                     </div>
+                 </div>
+                 <div className="bg-white p-6 rounded-xl shadow-md">
+                     <h3 className="font-bold text-lg flex items-center mb-4"><BellIcon className="w-5 h-5 mr-2 text-red-500" /> Recent Activity</h3>
+                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                         {notifications.slice(0, 4).map(notif => (
+                            <div key={notif.id} className="flex items-start space-x-3 text-sm border-b border-gray-100 pb-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notif.type === 'success' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                                    {notif.type === 'success' ? <CheckCircleIcon className="w-5 h-5 text-green-500"/> : <TrendingUpIcon className="w-5 h-5 text-blue-500" />}
+                                </div>
+                                <p className="text-gray-700">{notif.message}</p>
+                            </div>
+                         ))}
+                     </div>
+                 </div>
             </div>
         </div>
     );
 };
+
+const QuickAction: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
+    <button onClick={onClick} className="bg-white p-4 rounded-xl shadow-md text-center font-semibold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-transform flex flex-col items-center justify-center space-y-2">
+        <div className="w-12 h-12 flex items-center justify-center text-[#003893]">
+{/* FIX: Explicitly cast icon to React.ReactElement<any> to resolve TypeScript overload issue with React.cloneElement. */}
+{React.cloneElement(icon as React.ReactElement<any>, { className: 'w-8 h-8' })}
+</div>
+        <span className="text-sm">{label}</span>
+    </button>
+);
+
 
 const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: string }> = ({ onComplete, userId }) => {
     const [file, setFile] = useState<File | null>(null);
@@ -97,6 +178,8 @@ const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: 
             hash,
             verificationStatus: 'pending',
             storage_path: `${userId}/${Date.now()}-${file.name}`,
+            file: file,
+            previewUrl: URL.createObjectURL(file),
         };
 
         setTimeout(() => {
@@ -230,15 +313,17 @@ const MyApplicationsPage: React.FC<{ applications: Application[], services: Serv
 );
 
 
-type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications';
+type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'wallet';
 
 const CitizenPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
-    const { user, profile, applications, services, wallet } = state;
+    const { user, profile, applications, services, wallet, notifications } = state;
     const [page, setPage] = useState<CitizenPage>('dashboard');
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [showQr, setShowQr] = useState(false);
     const [appForPayment, setAppForPayment] = useState<Application | null>(null);
+    const [isSathiAiOpen, setIsSathiAiOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     
     useEffect(() => {
         if (profile && wallet.length === 0) {
@@ -307,9 +392,11 @@ const CitizenPortal: React.FC = () => {
                 return null;
             case 'my-applications':
                 return <MyApplicationsPage applications={applications.filter(a => a.userId === profile.id)} services={services} offices={state.services.flatMap(s => s.offices || [])} onPay={setAppForPayment} />;
+            case 'wallet':
+                return <DigitalWalletPage wallet={wallet} onAddDocument={() => setIsUploadModalOpen(true)} />;
             case 'dashboard':
             default:
-                return <Dashboard profile={profile} wallet={wallet} onNavigate={handleNavigate} onShowQr={() => setShowQr(true)} />;
+                return <Dashboard profile={profile} wallet={wallet} notifications={notifications} offices={services.flatMap(s => s.offices)} onNavigate={handleNavigate} onShowQr={() => setShowQr(true)} />;
         }
     };
     
@@ -317,15 +404,15 @@ const CitizenPortal: React.FC = () => {
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div className="flex items-center space-x-3">
                     <NepalFlagIcon className="h-8 w-auto" />
                     <h1 className="text-xl font-bold text-gray-800">Nagarik Card Portal</h1>
                 </div>
-                <div>
-                     {page !== 'dashboard' && <button onClick={() => setPage('dashboard')} className="text-sm font-medium text-[#003893] hover:underline">← Back to Dashboard</button>}
+                <div className='flex items-center gap-4'>
+                     {page !== 'dashboard' && <button onClick={() => setPage('dashboard')} className="text-sm font-medium text-[#003893] hover:underline whitespace-nowrap">← Back to Dashboard</button>}
+                     <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
                 </div>
-                <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
             </div>
             
             <main>
@@ -339,6 +426,29 @@ const CitizenPortal: React.FC = () => {
                     service={services.find(s => s.id === appForPayment.serviceId)}
                     onPaymentSuccess={() => handlePaymentSuccess(appForPayment.id)}
                     onClose={() => setAppForPayment(null)}
+                />
+            )}
+            
+            {isUploadModalOpen && profile && (
+                <UploadDocumentModal
+                    userId={profile.id}
+                    onClose={() => setIsUploadModalOpen(false)}
+                    onUpload={(doc) => dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: doc })}
+                />
+            )}
+
+            <button
+                onClick={() => setIsSathiAiOpen(true)}
+                className="fixed bottom-6 right-6 bg-[#003893] text-white p-4 rounded-full shadow-lg hover:bg-blue-800 transition transform hover:scale-110 z-40"
+                aria-label="Open Sathi AI Assistant"
+            >
+                <SathiAiIcon className="w-6 h-6" />
+            </button>
+
+            {isSathiAiOpen && (
+                <SathiAiModal
+                    services={services}
+                    onClose={() => setIsSathiAiOpen(false)}
                 />
             )}
         </div>

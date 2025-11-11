@@ -31,7 +31,7 @@ const QrCodeModal: React.FC<QrCodeModalProps> = ({ user, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center relative">
+            <div className="bg-white rounded-2xl p-8 max-w-xs sm:max-w-sm w-full text-center relative">
                  <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                  <h2 className="text-xl font-bold mb-4">Your Dynamic QR ID</h2>
                  <p className="text-sm text-gray-600 mb-6">Present this code for verification. It is valid for a limited time for your security.</p>

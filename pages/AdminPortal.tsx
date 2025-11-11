@@ -1,7 +1,10 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Service, Application, WalletDocument } from '../types';
-import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon } from '../components/icons';
+import { Service, Application, WalletDocument, Profile } from '../types';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon } from '../components/icons';
+import ApplicationDetailModal from '../components/ApplicationDetailModal';
+import ServiceEditorModal from '../components/ServiceEditorModal';
+import UserEditorModal from '../components/UserEditorModal';
 
 const StatusBadge: React.FC<{ status: WalletDocument['verificationStatus']}> = ({ status }) => {
     const statusMap = {
@@ -23,8 +26,15 @@ const StatusBadge: React.FC<{ status: WalletDocument['verificationStatus']}> = (
 const AdminPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
     const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
+    
+    const [activeTab, setActiveTab] = useState('applications');
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
     const [selectedUserId, setSelectedUserId] = useState<string>(allCitizenProfiles[0]?.id || '');
+    const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+    const [isServiceEditorOpen, setIsServiceEditorOpen] = useState(false);
+    const [editingService, setEditingService] = useState<Service | null>(null);
+    const [isUserEditorOpen, setIsUserEditorOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<Profile | null>(null);
 
     const systemHealthData = [
         { name: 'Document Verification', status: 'Operational' },
@@ -40,7 +50,7 @@ const AdminPortal: React.FC = () => {
     );
 
     const queue = useMemo(() => 
-        filteredApplications.filter(app => app.status === 'Approved'),
+        filteredApplications.filter(app => app.status === 'Approved').sort((a, b) => a.submittedAt.getTime() - b.submittedAt.getTime()),
         [filteredApplications]
     );
 
@@ -48,6 +58,13 @@ const AdminPortal: React.FC = () => {
         allWalletDocuments.filter(doc => doc.user_id === selectedUserId),
         [allWalletDocuments, selectedUserId]
     );
+    
+    const citizensWithDocCount = useMemo(() => {
+        return allCitizenProfiles.map(profile => {
+            const docCount = allWalletDocuments.filter(doc => doc.user_id === profile.id).length;
+            return { ...profile, docCount };
+        });
+    }, [allCitizenProfiles, allWalletDocuments]);
     
     const kpis = useMemo(() => {
         const activeUsers = allCitizenProfiles.length;
@@ -96,7 +113,32 @@ const AdminPortal: React.FC = () => {
     const handleReject = (documentId: string) => {
         dispatch({ type: 'REJECT_DOCUMENT', payload: { documentId } });
     };
+    
+    const openServiceEditor = (service: Service | null) => {
+        setEditingService(service);
+        setIsServiceEditorOpen(true);
+    };
+    
+    const handleSaveService = (service: Service) => {
+        dispatch({ type: 'UPSERT_SERVICE', payload: service });
+        setIsServiceEditorOpen(false);
+    };
 
+    const openUserEditor = (user: Profile) => {
+        setEditingUser(user);
+        setIsUserEditorOpen(true);
+    };
+
+    const handleSaveUser = (user: Profile) => {
+        dispatch({ type: 'UPDATE_PROFILE', payload: user });
+        setIsUserEditorOpen(false);
+    };
+
+    const tabs = [
+        { name: 'Applications', id: 'applications', icon: HourglassIcon },
+        { name: 'Services', id: 'services', icon: BriefcaseIcon },
+        { name: 'Citizens', id: 'citizens', icon: UsersIcon },
+    ];
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -108,55 +150,153 @@ const AdminPortal: React.FC = () => {
                 <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
             </div>
 
-            <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left side: Queue Management */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
-                    <h2 className="text-2xl font-bold mb-4">Live Service Queue</h2>
-                    <div className="flex items-center justify-between mb-4">
-                        <select 
-                            value={selectedServiceId}
-                            onChange={(e) => setSelectedServiceId(e.target.value)}
-                            className="p-2 border border-gray-300 rounded-md"
-                        >
-                            {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                        <button 
-                            onClick={handleCallNext} 
-                            disabled={queue.length === 0}
-                            className="bg-[#C51E3A] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400"
-                        >
-                            Call Next
-                        </button>
+            <main className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Center Content: Main Panels */}
+                <div className="lg:col-span-3">
+                    <div className="flex border-b border-gray-200 mb-6">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-t-lg -mb-px focus:outline-none ${
+                                    activeTab === tab.id
+                                        ? 'border-b-2 border-[#003893] text-[#003893]'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <tab.icon className="w-5 h-5" />
+                                <span>{tab.name}</span>
+                            </button>
+                        ))}
                     </div>
+                    
+                    {activeTab === 'applications' && (
+                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
+                            <h2 className="text-2xl font-bold mb-4">Application Management</h2>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                                <select 
+                                    value={selectedServiceId}
+                                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                                    className="p-2 border border-gray-300 rounded-md w-full sm:w-auto"
+                                >
+                                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <button 
+                                    onClick={handleCallNext} 
+                                    disabled={queue.length === 0}
+                                    className="bg-[#C51E3A] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 w-full sm:w-auto"
+                                >
+                                    Call Next (Token: {queue[0]?.token || 'N/A'})
+                                </button>
+                            </div>
+                             <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredApplications.length > 0 ? filteredApplications.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()).map((app) => {
+                                            const citizen = allCitizenProfiles.find(p => p.id === app.userId);
+                                            return (
+                                                <tr key={app.id} onClick={() => setSelectedApp(app)} className="cursor-pointer hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.token || 'N/A'}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen?.name || 'Unknown'}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.submittedAt.toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.status}</td>
+                                                </tr>
+                                            );
+                                        }) : (
+                                            <tr>
+                                                <td colSpan={4} className="text-center py-8 text-gray-500">No applications for this service.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
 
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {queue.length > 0 ? queue.map((app, index) => (
-                                    <tr key={app.id} className={index === 0 ? 'bg-blue-50' : ''}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.token}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.userId.substring(0,8)}...</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index === 0 ? 'Now Serving' : `Waiting (${index})`}</td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={3} className="text-center py-8 text-gray-500">No citizens in queue for this service.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    {activeTab === 'services' && (
+                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                                <h2 className="text-2xl font-bold">Service Management</h2>
+                                <button onClick={() => openServiceEditor(null)} className="bg-[#003893] text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-blue-800 transition text-sm w-full sm:w-auto">
+                                    Add New Service
+                                </button>
+                            </div>
+                            <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {services.map((service) => (
+                                            <tr key={service.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.category}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs. {service.fee}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                    <button onClick={() => openServiceEditor(service)} className="text-blue-600 hover:text-blue-900 font-medium">Edit</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {activeTab === 'citizens' && (
+                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
+                            <h2 className="text-2xl font-bold mb-4">Citizen Directory</h2>
+                            <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Docs</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {citizensWithDocCount.length > 0 ? citizensWithDocCount.map((citizen) => (
+                                            <tr key={citizen.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{citizen.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen.email}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen.phone || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center font-medium">{citizen.docCount}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                    <button onClick={() => openUserEditor(citizen)} className="text-blue-600 hover:text-blue-900 font-medium p-1 hover:bg-blue-50 rounded-md">
+                                                        <EditIcon className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center py-8 text-gray-500">No citizens have registered yet.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Right side: Other Admin Actions */}
-                <div className="space-y-6">
+                {/* Right side: KPIs and other panels */}
+                <div className="lg:col-span-1 space-y-6">
                      <div className="bg-white p-6 rounded-xl shadow-md">
                         <h3 className="text-lg font-bold mb-4">Key Performance Indicators</h3>
                         <div className="grid grid-cols-3 gap-4 text-center">
@@ -191,7 +331,7 @@ const AdminPortal: React.FC = () => {
                              {allCitizenProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
 
-                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                              {selectedUserDocs.length > 0 ? selectedUserDocs.map(doc => (
                                 <div key={doc.id} className="border border-gray-200 p-3 rounded-lg bg-gray-50/50">
                                     <div className="flex justify-between items-center">
@@ -231,6 +371,28 @@ const AdminPortal: React.FC = () => {
                     </div>
                 </div>
             </main>
+            {selectedApp && (
+                <ApplicationDetailModal 
+                    application={selectedApp}
+                    service={services.find(s => s.id === selectedApp.serviceId)}
+                    citizen={allCitizenProfiles.find(p => p.id === selectedApp.userId)}
+                    onClose={() => setSelectedApp(null)}
+                />
+            )}
+            {isServiceEditorOpen && (
+                <ServiceEditorModal
+                    serviceToEdit={editingService}
+                    onSave={handleSaveService}
+                    onClose={() => setIsServiceEditorOpen(false)}
+                />
+            )}
+            {isUserEditorOpen && (
+                <UserEditorModal
+                    userToEdit={editingUser}
+                    onSave={handleSaveUser}
+                    onClose={() => setIsUserEditorOpen(false)}
+                />
+            )}
         </div>
     );
 };

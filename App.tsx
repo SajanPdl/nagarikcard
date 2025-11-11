@@ -14,7 +14,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F8FC]">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <NepalFlagIcon className="h-16 w-auto animate-pulse" />
         <p className="mt-4 text-gray-600">Initializing Nagarik Card...</p>
       </div>
@@ -58,7 +58,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#F7F8FC] min-h-screen text-gray-800">
+    <div className="bg-gray-50 min-h-screen text-gray-800">
        <div aria-live="assertive" className="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-start z-[100]">
         <div className="w-full flex flex-col items-center space-y-4 sm:items-end">
             {notifications.map(notif => (

@@ -12,7 +12,13 @@
     <style>
       body {
         font-family: 'Manrope', sans-serif;
-        background-color: #F7F8FC;
+        background-color: #F9FAFB; /* Slightly cleaner gray */
+      }
+      /* Add a subtle transition to all elements for smoother UI interactions */
+      * {
+        transition: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
       }
     </style>
   <script type="importmap">
@@ -22,7 +28,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "qrcode.react": "https://aistudiocdn.com/qrcode.react@^4.2.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/supabase-js@^2.44.4"
+    "@supabase/supabase-js": "https://aistudiocdn.com/supabase-js@^2.44.4",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
   }
 }
 </script>
