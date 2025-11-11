@@ -1,10 +1,9 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Service, Application, WalletDocument } from '../types';
-import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon } from '../components/icons';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon } from '../components/icons';
 
 const StatusBadge: React.FC<{ status: WalletDocument['verificationStatus']}> = ({ status }) => {
-    // Fix: Renamed the second 'text' property to 'textColor' to avoid duplicate keys.
     const statusMap = {
         verified: { text: 'Verified', icon: <CheckCircleIcon className="w-4 h-4" />, bg: 'bg-green-100', textColor: 'text-green-800' },
         pending: { text: 'Pending', icon: <AlertTriangleIcon className="w-4 h-4" />, bg: 'bg-yellow-100', textColor: 'text-yellow-800' },
@@ -13,7 +12,6 @@ const StatusBadge: React.FC<{ status: WalletDocument['verificationStatus']}> = (
     const currentStatus = statusMap[status];
 
     return (
-        // Fix: Updated to use the new 'textColor' property for styling.
         <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${currentStatus.bg} ${currentStatus.textColor}`}>
             {currentStatus.icon}
             <span>{currentStatus.text}</span>
@@ -27,6 +25,14 @@ const AdminPortal: React.FC = () => {
     const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
     const [selectedUserId, setSelectedUserId] = useState<string>(allCitizenProfiles[0]?.id || '');
+
+    const systemHealthData = [
+        { name: 'Document Verification', status: 'Operational' },
+        { name: 'Application Processing', status: 'Operational' },
+        { name: 'Notification Service', status: 'Degraded' },
+        { name: 'Database Connectivity', status: 'Operational' },
+        { name: 'Citizen Authentication', status: 'Operational' },
+    ];
     
     const filteredApplications = useMemo(() => 
         applications.filter(app => app.serviceId === selectedServiceId),
@@ -42,6 +48,39 @@ const AdminPortal: React.FC = () => {
         allWalletDocuments.filter(doc => doc.user_id === selectedUserId),
         [allWalletDocuments, selectedUserId]
     );
+    
+    const kpis = useMemo(() => {
+        const activeUsers = allCitizenProfiles.length;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const processedToday = applications.filter(app => {
+            const lastStatus = app.statusHistory[app.statusHistory.length - 1];
+            return (lastStatus.status === 'Approved' || lastStatus.status === 'Called') && lastStatus.timestamp >= today;
+        }).length;
+
+        const approvedApps = applications.filter(app => 
+            app.statusHistory.some(h => h.status === 'Approved')
+        );
+
+        let avgApprovalTime = 'N/A';
+        if (approvedApps.length > 0) {
+            const totalTime = approvedApps.reduce((acc, app) => {
+                const submittedTime = app.statusHistory.find(h => h.status === 'Submitted')?.timestamp;
+                const approvedTime = app.statusHistory.find(h => h.status === 'Approved')?.timestamp;
+                if (submittedTime && approvedTime) {
+                    return acc + (approvedTime.getTime() - submittedTime.getTime());
+                }
+                return acc;
+            }, 0);
+            const avgTimeMs = totalTime / approvedApps.length;
+            const avgTimeDays = (avgTimeMs / (1000 * 60 * 60 * 24)).toFixed(1);
+            avgApprovalTime = `${avgTimeDays} days`;
+        }
+        
+        return { activeUsers, processedToday, avgApprovalTime };
+    }, [allCitizenProfiles, applications]);
+
 
     const handleCallNext = () => {
         const nextInQueue = queue[0];
@@ -118,6 +157,27 @@ const AdminPortal: React.FC = () => {
 
                 {/* Right side: Other Admin Actions */}
                 <div className="space-y-6">
+                     <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="text-lg font-bold mb-4">Key Performance Indicators</h3>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <UsersIcon className="w-8 h-8 mx-auto text-blue-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.activeUsers}</p>
+                                <p className="text-xs text-gray-500">Active Users</p>
+                            </div>
+                            <div>
+                                <FileCheckIcon className="w-8 h-8 mx-auto text-green-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.processedToday}</p>
+                                <p className="text-xs text-gray-500">Processed Today</p>
+                            </div>
+                            <div>
+                                <HourglassIcon className="w-8 h-8 mx-auto text-yellow-500 mb-2"/>
+                                <p className="text-2xl font-bold text-gray-800">{kpis.avgApprovalTime}</p>
+                                <p className="text-xs text-gray-500">Avg. Approval</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="bg-white p-6 rounded-xl shadow-md">
                         <h3 className="text-lg font-bold mb-4">Document Verification</h3>
                         <p className="text-sm text-gray-600 mb-4">Select a citizen to review their documents.</p>
@@ -156,10 +216,17 @@ const AdminPortal: React.FC = () => {
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold mb-4">System Status</h3>
-                         <div className="flex items-center text-green-600">
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span>All Systems Operational</span>
+                        <h3 className="text-lg font-bold mb-4">System Health</h3>
+                        <div className="space-y-3">
+                            {systemHealthData.map(service => (
+                                <div key={service.name} className="flex justify-between items-center text-sm">
+                                    <p className="text-gray-600">{service.name}</p>
+                                    <div className={`flex items-center space-x-2 font-medium ${service.status === 'Operational' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                        <div className={`w-2.5 h-2.5 rounded-full ${service.status === 'Operational' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                                        <span>{service.status}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

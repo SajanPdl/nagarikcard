@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { MOCK_USER } from '../constants'; // For demo data
 import { CheckCircleIcon, NepalFlagIcon } from '../components/icons';
@@ -7,25 +7,48 @@ const KioskPortal: React.FC = () => {
     const { dispatch } = useContext(AppContext);
     const [scannedData, setScannedData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!scannedData || timeLeft === null) return;
+
+        if (timeLeft <= 0) {
+            setScannedData(null);
+            setError("Expired Code");
+            setTimeLeft(null);
+            return;
+        }
+
+        const timerId = setInterval(() => {
+            setTimeLeft(prevTime => (prevTime ? prevTime - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(timerId);
+    }, [scannedData, timeLeft]);
+
 
     const handleScan = () => {
-        // In a real app, this would use the camera. Here we simulate a scan.
+        // Reset state for a new scan
         setError(null);
+        setScannedData(null);
+        setTimeLeft(null);
+
         try {
-            // This is a mock JWT payload.
+            // In a real app, this would use the camera. Here we simulate a scan with a 15-second validity.
+            const validityDurationSeconds = 15;
+            const expiryTimestamp = Date.now() + validityDurationSeconds * 1000;
+            
             const mockPayload = {
                 userId: MOCK_USER.id,
                 name: MOCK_USER.name,
                 token: 'DL-KTM-105',
-                expiry: Date.now() + 5 * 60 * 1000 // Expires in 5 minutes
+                expiry: expiryTimestamp,
             };
 
-            // Simulate verification
             if (mockPayload.expiry < Date.now()) {
                 throw new Error("Expired Code");
             }
             
-            // Redact info for display
             const redactedName = `${mockPayload.name.split(' ')[0].charAt(0)}. ${mockPayload.name.split(' ').length > 1 ? mockPayload.name.split(' ')[1] : ''}`;
             
             setScannedData({
@@ -33,6 +56,9 @@ const KioskPortal: React.FC = () => {
                 token: mockPayload.token,
                 status: 'VERIFIED'
             });
+
+            // Start the countdown
+            setTimeLeft(validityDurationSeconds);
 
         } catch (e) {
             setError("Invalid or Expired Code");
@@ -43,6 +69,13 @@ const KioskPortal: React.FC = () => {
     const handleReset = () => {
         setScannedData(null);
         setError(null);
+        setTimeLeft(null);
+    }
+    
+    const formatTime = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
     }
 
     return (
@@ -78,6 +111,11 @@ const KioskPortal: React.FC = () => {
                             <p><span className="font-semibold">Name:</span> {scannedData.name}</p>
                             <p><span className="font-semibold">Token:</span> {scannedData.token}</p>
                         </div>
+                         {timeLeft !== null && (
+                            <div className="mt-4 font-bold text-lg text-gray-700">
+                                Expires in: <span className={timeLeft < 6 ? 'text-red-500 animate-pulse' : ''}>{formatTime(timeLeft)}</span>
+                            </div>
+                        )}
                          <button onClick={handleReset} className="mt-8 w-full bg-gray-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-600 transition">Scan Next</button>
                     </div>
                 )}
