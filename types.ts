@@ -13,7 +13,7 @@ export interface WalletDocument {
   docType: string;
   fileName: string;
   hash: string;
-  verified: boolean;
+  verificationStatus: 'pending' | 'verified' | 'rejected';
   file?: File; // Client-side only
   previewUrl?: string; // Client-side only
   storage_path: string;

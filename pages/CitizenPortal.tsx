@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Profile, WalletDocument, Service, Application } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon } from '../components/icons';
+import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
@@ -20,6 +20,21 @@ const sha256 = async (file: File): Promise<string> => {
 const Dashboard: React.FC<{ profile: Profile, wallet: WalletDocument[], onNavigate: (page: CitizenPage) => void, onShowQr: () => void }> = ({ profile, wallet, onNavigate, onShowQr }) => {
     const citizenDoc = wallet.find(doc => doc.docType === 'citizenship');
     
+    const getStatusInfo = (status: WalletDocument['verificationStatus']) => {
+        switch (status) {
+            case 'verified':
+                return { text: 'Verified', icon: <CheckCircleIcon className="w-5 h-5 text-green-400" />, color: 'text-green-400' };
+            case 'pending':
+                return { text: 'Pending Review', icon: <AlertTriangleIcon className="w-5 h-5 text-yellow-400" />, color: 'text-yellow-400' };
+            case 'rejected':
+                return { text: 'Rejected', icon: <XCircleIcon className="w-5 h-5 text-red-400" />, color: 'text-red-400' };
+            default:
+                return { text: 'Unknown', icon: null, color: '' };
+        }
+    };
+
+    const citizenStatus = citizenDoc ? getStatusInfo(citizenDoc.verificationStatus) : null;
+
     return (
         <div>
             <h2 className="text-2xl font-bold mb-6">My Digital Wallet</h2>
@@ -31,11 +46,11 @@ const Dashboard: React.FC<{ profile: Profile, wallet: WalletDocument[], onNaviga
                     </div>
                     <NepalFlagIcon className="w-10 h-auto" />
                 </div>
-                {citizenDoc ? (
+                {citizenDoc && citizenStatus ? (
                     <div className="mt-6">
-                        <div className="flex items-center space-x-2 text-sm">
-                            <CheckCircleIcon className={`w-5 h-5 ${citizenDoc.verified ? 'text-green-400' : 'text-yellow-400'}`} />
-                            <span>Citizenship {citizenDoc.verified ? 'Verified' : 'Pending Review'}</span>
+                        <div className={`flex items-center space-x-2 text-sm ${citizenStatus.color}`}>
+                            {citizenStatus.icon}
+                            <span>Citizenship {citizenStatus.text}</span>
                         </div>
                         <p className="text-xs font-mono break-all mt-2 opacity-60">Hash: {citizenDoc.hash}</p>
                     </div>
@@ -80,7 +95,7 @@ const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: 
             docType: 'citizenship',
             fileName: file.name,
             hash,
-            verified: false, // Starts as unverified
+            verificationStatus: 'pending',
             storage_path: `${userId}/${Date.now()}-${file.name}`,
         };
 
@@ -123,7 +138,7 @@ const ServiceCatalogPage: React.FC<{ services: Service[], onSelectService: (serv
 
 
 const ApplicationPage: React.FC<{ service: Service, profile: Profile, onSubmit: (app: Application) => void, wallet: WalletDocument[] }> = ({ service, profile, onSubmit, wallet }) => {
-    const walletHasDoc = (docType: string) => wallet.some(d => d.docType === docType && d.verified);
+    const walletHasDoc = (docType: string) => wallet.some(d => d.docType === docType && d.verificationStatus === 'verified');
 
     const handleSubmit = async () => {
         if (!service.offices || service.offices.length === 0) {

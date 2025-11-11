@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
 import { Profile, Application, WalletDocument, Service } from '../types';
-import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET } from '../constants';
+import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login';
@@ -20,6 +20,8 @@ interface AppState {
   applications: Application[];
   services: Service[];
   notifications: Notification[];
+  allCitizenProfiles: Profile[];
+  allWalletDocuments: WalletDocument[];
 }
 
 type Action =
@@ -35,7 +37,9 @@ type Action =
   | { type: 'ADD_NOTIFICATION'; payload: Omit<Notification, 'id'> }
   | { type: 'REMOVE_NOTIFICATION'; payload: number }
   | { type: 'CALL_NEXT_TOKEN'; payload: string }
-  | { type: 'VERIFY_DOCUMENT'; payload: string };
+  | { type: 'SET_ALL_CITIZEN_DATA'; payload: { profiles: Profile[], documents: WalletDocument[] } }
+  | { type: 'VERIFY_DOCUMENT'; payload: { documentId: string } }
+  | { type: 'REJECT_DOCUMENT'; payload: { documentId: string } };
 
 const initialState: AppState = {
   view: 'landing',
@@ -46,6 +50,8 @@ const initialState: AppState = {
   applications: [],
   services: [],
   notifications: [],
+  allCitizenProfiles: [],
+  allWalletDocuments: [],
 };
 
 const appReducer = (state: AppState, action: Action): AppState => {
@@ -127,20 +133,35 @@ const appReducer = (state: AppState, action: Action): AppState => {
             notifications: notifications,
         };
     }
+    case 'SET_ALL_CITIZEN_DATA':
+        return { ...state, allCitizenProfiles: action.payload.profiles, allWalletDocuments: action.payload.documents };
     case 'VERIFY_DOCUMENT': {
-        const docToVerify = state.wallet.find(d => d.id === action.payload);
-        if (!docToVerify || docToVerify.verified) return state;
-
-        const updatedWallet = state.wallet.map(doc => 
-            doc.id === action.payload ? { ...doc, verified: true } : doc
-        );
+        const { documentId } = action.payload;
+        const updateDoc = (doc: WalletDocument) => doc.id === documentId ? { ...doc, verificationStatus: 'verified' as const } : doc;
+        const docName = state.allWalletDocuments.find(d => d.id === documentId)?.fileName || 'Document';
 
         return {
             ...state,
-            wallet: updatedWallet,
+            wallet: state.wallet.map(updateDoc),
+            allWalletDocuments: state.allWalletDocuments.map(updateDoc),
             notifications: [
                 ...state.notifications,
-                { id: Date.now(), message: `Document "${docToVerify.fileName}" has been verified.`, type: 'success' }
+                { id: Date.now(), message: `"${docName}" has been verified.`, type: 'success' }
+            ]
+        };
+    }
+    case 'REJECT_DOCUMENT': {
+        const { documentId } = action.payload;
+        const updateDoc = (doc: WalletDocument) => doc.id === documentId ? { ...doc, verificationStatus: 'rejected' as const } : doc;
+        const docName = state.allWalletDocuments.find(d => d.id === documentId)?.fileName || 'Document';
+
+        return {
+            ...state,
+            wallet: state.wallet.map(updateDoc),
+            allWalletDocuments: state.allWalletDocuments.map(updateDoc),
+            notifications: [
+                ...state.notifications,
+                { id: Date.now(), message: `"${docName}" has been rejected.`, type: 'info' }
             ]
         };
     }
@@ -172,8 +193,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
         } else if(state.profile.role === 'admin') {
             dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-            dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
-        } else {
+            dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
+                profiles: MOCK_ALL_CITIZENS,
+                documents: MOCK_ALL_WALLET_DOCS
+            }});
+        } else { // Kiosk
             dispatch({ type: 'SET_WALLET', payload: [] });
             dispatch({ type: 'SET_APPLICATIONS', payload: [] });
         }
