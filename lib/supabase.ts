@@ -2,8 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Profile, WalletDocument, Service, Application, Office } from '../types';
 
 // Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Environment variables are defined in env.d.ts and .env.local
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables. Check .env.local');
