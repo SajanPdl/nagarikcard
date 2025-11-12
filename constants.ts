@@ -1,4 +1,4 @@
-import { Profile, Service, WalletDocument, Application, Office } from './types';
+import { Profile, Service, WalletDocument, Application, Office, PaymentDue, Transaction } from './types';
 
 export const MOCK_OFFICES: Office[] = [
   { id: 'office-1', name: 'Transport Management Office, Ekantakuna' },
@@ -112,6 +112,8 @@ export const MOCK_WALLET: WalletDocument[] = [
         hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
         verificationStatus: 'verified',
         storage_path: `${MOCK_CITIZEN_PROFILE.id}/citizenship_maya.pdf`,
+        issuedDate: '2010-05-20',
+        documentNumber: '27-01-70-12345'
     },
     {
         id: 'doc-2',
@@ -121,6 +123,9 @@ export const MOCK_WALLET: WalletDocument[] = [
         hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
         verificationStatus: 'verified',
         storage_path: `${MOCK_CITIZEN_PROFILE.id}/license_maya.jpg`,
+        issuedDate: '2022-08-15',
+        expiryDate: '2027-08-14',
+        documentNumber: 'BAG-123456-DL'
     },
      {
         id: 'doc-3',
@@ -130,6 +135,27 @@ export const MOCK_WALLET: WalletDocument[] = [
         hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
         verificationStatus: 'pending',
         storage_path: `${MOCK_CITIZEN_PROFILE.id}/passport_maya.pdf`,
+    },
+    {
+        id: 'doc-4',
+        user_id: MOCK_CITIZEN_PROFILE.id,
+        docType: 'pan_card',
+        fileName: 'pan_card.jpg',
+        hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+        verificationStatus: 'verified',
+        storage_path: `${MOCK_CITIZEN_PROFILE.id}/pan_card.jpg`,
+        documentNumber: '123456789'
+    },
+    {
+        id: 'doc-5',
+        user_id: MOCK_CITIZEN_PROFILE.id,
+        docType: 'health_card',
+        fileName: 'health_insurance.pdf',
+        hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6',
+        verificationStatus: 'rejected',
+        storage_path: `${MOCK_CITIZEN_PROFILE.id}/health_insurance.pdf`,
+        documentNumber: 'HI-987654321',
+        expiryDate: '2025-01-01'
     },
 ];
 
@@ -179,6 +205,30 @@ export const MOCK_APPLICATIONS: Application[] = [
         ],
     },
 ];
+
+export const MOCK_PAYMENTS_DUE: PaymentDue[] = [
+    {
+        id: 'pay-1',
+        title: 'Vehicle Tax 2081/82',
+        amount: 5000,
+        dueDate: '2024-09-15',
+        relatedService: 'Annual Vehicle Tax'
+    },
+    {
+        id: 'pay-2',
+        title: 'Property Tax - Kathmandu Metropolitian City',
+        amount: 8500,
+        dueDate: '2024-10-01',
+        relatedService: 'Annual Property Tax'
+    }
+];
+
+export const MOCK_TRANSACTION_HISTORY: Transaction[] = [
+    { id: 'txn-1', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), description: 'Driving License Renewal Fee', amount: 1500, status: 'Completed' },
+    { id: 'txn-2', date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), description: 'Land Tax Payment', amount: 2500, status: 'Completed' },
+    { id: 'txn-3', date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000), description: 'Vehicle Tax 2080/81', amount: 4800, status: 'Completed' },
+];
+
 
 export const MOCK_ALL_CITIZENS = [MOCK_CITIZEN_PROFILE];
 export const MOCK_ALL_WALLET_DOCS = [...MOCK_WALLET];
