@@ -10,6 +10,7 @@ import PaymentModal from '../components/PaymentModal';
 import SathiAiModal from '../components/SathiAiModal';
 import DigitalWalletPage from '../components/DigitalWalletPage';
 import UploadDocumentModal from '../components/UploadDocumentModal';
+import { MOCK_OFFICES } from '../constants';
 
 // --- Helper Functions ---
 export const sha256 = async (file: File): Promise<string> => {
@@ -53,7 +54,7 @@ const NepalMap: React.FC = () => {
             `}</style>
             <svg width="100%" height="100%" viewBox="0 0 1002 558" preserveAspectRatio="xMidYMid meet">
                 <path
-                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
+                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
                     fill="#e2e8f0"
                     stroke="#a0aec0"
                     strokeWidth="1"
@@ -391,8 +392,6 @@ const MyApplicationsPage: React.FC<{ applications: Application[], services: Serv
     </div>
 );
 
-// FIX: This component was incorrectly assigned a type that expects a return value, but it returned void.
-// The function now correctly returns null, satisfying the React.FC type contract.
 const DummyComponentWithError: React.FC = () => {
     console.log("This component had an error because it didn't return anything.");
     return null;
@@ -450,7 +449,6 @@ const HelpPage: React.FC<{ services: Service[] }> = ({ services }) => {
 };
 
 const CommunityImpactPage: React.FC<{ services: Service[] }> = ({ services }) => {
-    // Mock data for leaderboard
     const leaderboardData = [
         { rank: 1, name: 'Ramesh K.', points: 1250, badge: '🥇' },
         { rank: 2, name: 'Sita G.', points: 1100, badge: '🥈' },
@@ -475,4 +473,224 @@ const CommunityImpactPage: React.FC<{ services: Service[] }> = ({ services }) =>
                     <h3 className="text-3xl font-bold text-blue-600">{communityStats.requestsCompleted.toLocaleString()}</h3>
                     <p className="text-gray-500 mt-1">Services Completed</p>
                 </div>
-                 <div className="bg-white p
+                 <div className="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 className="text-3xl font-bold text-red-600">{communityStats.badgesEarned}</h3>
+                    <p className="text-gray-500 mt-1">Civic Badges Earned</p>
+                </div>
+                 <div className="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 className="text-3xl font-bold text-green-600">{communityStats.avgTimeToHelp}</h3>
+                    <p className="text-gray-500 mt-1">Avg. Help Time</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                    <h3 className="text-xl font-bold mb-4 flex items-center"><AwardIcon className="w-5 h-5 mr-2 text-yellow-500"/> Engagement Leaderboard</h3>
+                    <div className="space-y-2">
+                        {leaderboardData.map(user => (
+                            <div key={user.rank} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50">
+                                <div className="flex items-center">
+                                    <span className="font-bold text-gray-500 w-8">{user.badge || user.rank}</span>
+                                    <span className="font-semibold text-gray-800">{user.name}</span>
+                                </div>
+                                <span className="font-bold text-blue-600">{user.points.toLocaleString()} pts</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                    <h3 className="font-bold text-lg flex items-center mb-4"><MapPinIcon className="w-5 h-5 mr-2 text-red-500" /> Community Request Map</h3>
+                    <NepalMap />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'wallet' | 'help' | 'community-impact';
+
+export const CitizenPortal: React.FC = () => {
+  const { state, dispatch } = useContext(AppContext);
+  const { profile, wallet, applications, services, notifications } = state;
+  const [page, setPage] = useState<CitizenPage>('dashboard');
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [appToPay, setAppToPay] = useState<Application | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (profile && wallet.length === 0 && page !== 'onboarding') {
+      if (page !== 'dashboard') {
+          setPage('onboarding');
+      }
+    } else if (profile && wallet.length > 0 && page === 'onboarding') {
+      setPage('dashboard');
+    }
+  }, [wallet, profile, page]);
+
+  const handleNavigate = (newPage: CitizenPage) => {
+    setPage(newPage);
+  };
+
+  const handleSelectService = (service: Service) => {
+    setSelectedService(service);
+    setPage('application');
+  };
+  
+  const handleQuickApply = (serviceCode: string) => {
+    const service = services.find(s => s.code === serviceCode);
+    if (service) {
+      handleSelectService(service);
+    } else {
+      dispatch({type: 'ADD_NOTIFICATION', payload: { message: `Service ${serviceCode} not found.`, type: 'info' }})
+    }
+  }
+
+  const handleApplicationSubmit = (app: Application) => {
+    dispatch({ type: 'UPSERT_APPLICATION', payload: app });
+    setAppToPay(app);
+  };
+  
+  const handlePaymentSuccess = () => {
+    if (!appToPay) return;
+    
+    const submittedApp: Application = {
+        ...appToPay,
+        status: 'Submitted',
+        paymentStatus: 'Paid',
+        token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
+        statusHistory: [
+            ...appToPay.statusHistory,
+            { status: 'Submitted', timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }
+        ]
+    };
+    
+    dispatch({ type: 'UPSERT_APPLICATION', payload: submittedApp });
+    
+    setTimeout(() => {
+        const processingApp = {
+            ...submittedApp,
+            status: 'Processing' as const,
+             statusHistory: [
+                ...submittedApp.statusHistory,
+                { status: 'Processing' as const, timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }
+            ]
+        };
+        dispatch({ type: 'UPSERT_APPLICATION', payload: processingApp });
+    }, 2000);
+
+    setAppToPay(null);
+    setPage('my-applications');
+    dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'Payment successful! Application submitted.', type: 'success' } });
+  };
+  
+  const handleOnboardingComplete = (doc: WalletDocument) => {
+      dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: doc });
+      dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'Citizenship document uploaded for verification.', type: 'success' } });
+      setPage('dashboard');
+  }
+
+  const handleUploadDocument = (doc: WalletDocument) => {
+    dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: doc });
+    dispatch({ type: 'ADD_NOTIFICATION', payload: { message: `"${doc.fileName}" uploaded for verification.`, type: 'success' } });
+  }
+
+  if (!profile) {
+    return <div>Loading citizen profile...</div>;
+  }
+  
+   const SideNavLink: React.FC<{
+      pageName: CitizenPage;
+      label: string;
+      icon: React.ElementType;
+    }> = ({ pageName, label, icon: Icon }) => (
+      <button
+        onClick={() => setPage(pageName)}
+        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+          page === pageName
+            ? 'bg-[#003893] text-white'
+            : 'text-gray-600 hover:bg-gray-200'
+        }`}
+      >
+        <Icon className="w-5 h-5" />
+        <span>{label}</span>
+      </button>
+  );
+
+  const renderPage = () => {
+    if (wallet.length === 0 && page !== 'onboarding') {
+        return <Onboarding onComplete={handleOnboardingComplete} userId={profile.id} />
+    }
+    
+    switch (page) {
+      case 'onboarding':
+        return <Onboarding onComplete={handleOnboardingComplete} userId={profile.id} />;
+      case 'service-catalog':
+        return <ServiceCatalogPage services={services} onSelectService={handleSelectService} />;
+      case 'application':
+        return selectedService ? <ApplicationPage service={selectedService} profile={profile} wallet={wallet} onSubmit={handleApplicationSubmit} /> : <p>Service not selected.</p>;
+      case 'my-applications':
+        return <MyApplicationsPage applications={applications} services={services} offices={MOCK_OFFICES} onPay={(app) => setAppToPay(app)} />;
+      case 'wallet':
+        return <DigitalWalletPage wallet={wallet} onAddDocument={() => setIsUploadModalOpen(true)} />;
+      case 'help':
+        return <HelpPage services={services} />;
+      case 'community-impact':
+        return <CommunityImpactPage services={services} />;
+      case 'dashboard':
+      default:
+        return <Dashboard 
+                  profile={profile} 
+                  applications={applications} 
+                  services={services}
+                  offices={MOCK_OFFICES}
+                  notifications={notifications}
+                  onNavigate={handleNavigate}
+                  onOpenAi={() => setIsAiModalOpen(true)}
+                  onQuickApply={handleQuickApply}
+                />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+        <header className="bg-white shadow-sm sticky top-0 z-40">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setPage('dashboard')}>
+                        <NepalFlagIcon className="h-8 w-auto" />
+                        <h1 className="text-xl font-bold text-gray-800">GovFlow Portal</h1>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <button onClick={() => setIsAiModalOpen(true)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100"><SathiAiIcon className="w-6 h-6"/></button>
+                        <button onClick={() => setIsQrModalOpen(true)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100"><QrCodeIcon className="w-6 h-6"/></button>
+                        <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                <aside className="lg:col-span-1 bg-white p-4 rounded-xl shadow-md space-y-2 sticky top-24">
+                   <SideNavLink pageName="dashboard" label="Dashboard" icon={BriefcaseIcon} />
+                   <SideNavLink pageName="my-applications" label="My Applications" icon={BellIcon} />
+                   <SideNavLink pageName="service-catalog" label="Service Catalog" icon={BookOpenIcon} />
+                   <SideNavLink pageName="wallet" label="Digital Wallet" icon={WalletIcon} />
+                   <SideNavLink pageName="community-impact" label="Community Impact" icon={TrendingUpIcon} />
+                   <SideNavLink pageName="help" label="Help & Info" icon={BookOpenIcon} />
+                </aside>
+                <main className="lg:col-span-3">
+                     {renderPage()}
+                </main>
+            </div>
+        </div>
+
+        {isQrModalOpen && <QrCodeModal user={profile} onClose={() => setIsQrModalOpen(false)} />}
+        {isAiModalOpen && <SathiAiModal services={services} onClose={() => setIsAiModalOpen(false)} />}
+        {isUploadModalOpen && <UploadDocumentModal userId={profile.id} onClose={() => setIsUploadModalOpen(false)} onUpload={handleUploadDocument} />}
+        {appToPay && <PaymentModal application={appToPay} service={services.find(s => s.id === appToPay.serviceId)} onPaymentSuccess={handlePaymentSuccess} onClose={() => setAppToPay(null)} />}
+    </div>
+  );
+};
