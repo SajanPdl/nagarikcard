@@ -7,16 +7,46 @@ export interface Profile {
   officeId?: string;
 }
 
+export type DocumentType = 
+  | 'citizenship' 
+  | 'driving_license' 
+  | 'passport' 
+  | 'pan_card'
+  | 'health_card'
+  | 'birth_certificate'
+  | 'land_ownership'
+  | 'academic_certificate';
+
 export interface WalletDocument {
   id: string;
   user_id: string;
-  docType: string;
+  docType: DocumentType;
   fileName: string;
   hash: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   file?: File; // Client-side only
   previewUrl?: string; // Client-side only
   storage_path: string;
+  // Optional metadata
+  issuedDate?: string;
+  expiryDate?: string;
+  documentNumber?: string;
+}
+
+export interface PaymentDue {
+  id: string;
+  title: string;
+  amount: number;
+  dueDate: string;
+  relatedService: string;
+}
+
+export interface Transaction {
+  id: string;
+  date: Date;
+  description: string;
+  amount: number;
+  status: 'Completed' | 'Failed';
 }
 
 export interface Service {
