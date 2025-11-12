@@ -1,8 +1,9 @@
 
+
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Profile, WalletDocument, Service, Application, Office } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, SparklesIcon, ArrowRightIcon } from '../components/icons';
+import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, SparklesIcon, ArrowRightIcon, UserIcon, MessageSquareIcon, ZapIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
@@ -54,7 +55,7 @@ const NepalMap: React.FC = () => {
             `}</style>
             <svg width="100%" height="100%" viewBox="0 0 1002 558" preserveAspectRatio="xMidYMid meet">
                 <path
-                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
+                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
                     fill="#e2e8f0"
                     stroke="#a0aec0"
                     strokeWidth="1"
@@ -80,7 +81,7 @@ const NepalMap: React.FC = () => {
 
 // --- New Dashboard Sub-Components ---
 const QuickActionButton: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
-    <button onClick={onClick} className="bg-white p-4 rounded-xl shadow-md text-left font-semibold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-transform flex items-center space-x-3 group">
+    <button onClick={onClick} className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-left font-semibold text-gray-700 hover:bg-gray-100 hover:border-blue-300 hover:-translate-y-1 transition-all flex items-center space-x-3 group">
         <div className="w-12 h-12 flex items-center justify-center text-white bg-blue-600 rounded-lg group-hover:bg-blue-700 transition-colors">
             {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-7 h-7' })}
         </div>
@@ -128,11 +129,14 @@ const Dashboard: React.FC<{
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column */}
                 <div className="lg:col-span-2 space-y-8">
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <QuickActionButton icon={<IdCardIcon />} label="Renew License" onClick={() => onQuickApply('DL_RENEW')} />
-                        <QuickActionButton icon={<CreditCardIcon />} label="Pay Land Tax" onClick={() => onQuickApply('LAND_TAX')} />
-                        <QuickActionButton icon={<WalletIcon />} label="Nagarik Wallet" onClick={() => onNavigate('nagarik-wallet')} />
-                        <QuickActionButton icon={<BriefcaseIcon />} label="All Services" onClick={() => onNavigate('service-catalog')} />
+                     <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="font-bold text-lg flex items-center mb-4"><ZapIcon className="w-5 h-5 mr-2 text-blue-500" /> Quick Actions</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <QuickActionButton icon={<IdCardIcon />} label="Renew License" onClick={() => onQuickApply('DL_RENEW')} />
+                            <QuickActionButton icon={<CreditCardIcon />} label="Pay Land Tax" onClick={() => onQuickApply('LAND_TAX')} />
+                            <QuickActionButton icon={<WalletIcon />} label="Nagarik Wallet" onClick={() => onNavigate('nagarik-wallet')} />
+                            <QuickActionButton icon={<BriefcaseIcon />} label="All Services" onClick={() => onNavigate('service-catalog')} />
+                        </div>
                     </div>
 
                     <div className="bg-white p-6 rounded-xl shadow-md">
@@ -507,7 +511,86 @@ const CommunityImpactPage: React.FC<{ services: Service[] }> = ({ services }) =>
     );
 };
 
-type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact';
+const ProfileSettingsPage: React.FC<{ profile: Profile, dispatch: React.Dispatch<any> }> = ({ profile, dispatch }) => {
+    const [formData, setFormData] = useState({
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+    });
+
+    useEffect(() => {
+        setFormData({
+            name: profile.name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+        });
+    }, [profile]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const updatedProfile: Profile = {
+            ...profile,
+            ...formData,
+        };
+        dispatch({ type: 'UPDATE_PROFILE', payload: updatedProfile });
+    };
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-6">Profile Settings</h2>
+            <div className="bg-white p-8 rounded-xl shadow-md max-w-2xl mx-auto">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div className="flex justify-end pt-4">
+                        <button type="submit" className="bg-[#003893] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-800 transition">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact' | 'profile-settings';
 
 export const CitizenPortal: React.FC = () => {
   const { state, dispatch } = useContext(AppContext);
@@ -633,11 +716,21 @@ export const CitizenPortal: React.FC = () => {
       case 'my-applications':
         return <MyApplicationsPage applications={applications} services={services} offices={MOCK_OFFICES} onPay={(app) => setAppToPay(app)} />;
       case 'nagarik-wallet':
-        return <NagarikWalletPage wallet={wallet} onAddDocument={() => setIsUploadModalOpen(true)} onOpenQr={() => setIsQrModalOpen(true)} />;
+        return <NagarikWalletPage 
+                    wallet={wallet} 
+                    onAddDocument={() => setIsUploadModalOpen(true)} 
+                    onOpenQr={() => setIsQrModalOpen(true)}
+                    services={services}
+                    applications={applications}
+                    onNavigate={handleNavigate}
+                    onQuickApply={handleQuickApply}
+                />;
       case 'help':
         return <HelpPage services={services} />;
       case 'community-impact':
         return <CommunityImpactPage services={services} />;
+      case 'profile-settings':
+        return <ProfileSettingsPage profile={profile} dispatch={dispatch} />;
       case 'dashboard':
       default:
         return <Dashboard 
@@ -679,7 +772,10 @@ export const CitizenPortal: React.FC = () => {
                    <SideNavLink pageName="service-catalog" label="Service Catalog" icon={BookOpenIcon} />
                    <SideNavLink pageName="nagarik-wallet" label="Nagarik Wallet" icon={WalletIcon} />
                    <SideNavLink pageName="community-impact" label="Community Impact" icon={TrendingUpIcon} />
-                   <SideNavLink pageName="help" label="Help & Info" icon={BookOpenIcon} />
+                   <div className="!mt-4 pt-4 border-t border-gray-100 space-y-2">
+                        <SideNavLink pageName="profile-settings" label="Profile Settings" icon={UserIcon} />
+                        <SideNavLink pageName="help" label="Help & Info" icon={MessageSquareIcon} />
+                   </div>
                 </aside>
                 <main className="lg:col-span-3">
                      {renderPage()}

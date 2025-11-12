@@ -159,7 +159,7 @@ const LandingPage: React.FC = () => {
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
                             <div className="text-center lg:text-left">
                                 <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight fade-in-up">
-                                    {/* <span className="text-white/80">GovFlow:</span> <br/> */}
+                                    <span className="text-white/80">GovFlow:</span> <br/>
                                     <span className="text-white">सरकारी सेवा, अब तपाईंको हातमा।</span>
                                 </h1>
                                 <p className="mt-6 text-lg text-white/80 max-w-xl mx-auto lg:mx-0 fade-in-up fade-in-up-delay-1">

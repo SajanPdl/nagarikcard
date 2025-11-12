@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { WalletDocument, DocumentType, PaymentDue, Transaction } from '../../types';
-import { FileTextIcon, CheckCircleIcon, AlertTriangleIcon, XCircleIcon, FilePlusIcon, IdCardIcon, WalletIcon, CreditCardIcon, ShieldLockIcon, HistoryIcon, LandPlotIcon, HealthIcon, QrCodeIcon, BellIcon } from '../../components/icons';
+import { WalletDocument, DocumentType, Service, Application } from '../../types';
+import { FileTextIcon, CheckCircleIcon, AlertTriangleIcon, XCircleIcon, FilePlusIcon, IdCardIcon, WalletIcon, CreditCardIcon, ShieldLockIcon, HistoryIcon, LandPlotIcon, HealthIcon, QrCodeIcon, BellIcon, BriefcaseIcon, CarIcon, UsersIcon, BookOpenIcon, ScaleIcon, SparklesIcon } from '../../components/icons';
 import { MOCK_PAYMENTS_DUE, MOCK_TRANSACTION_HISTORY } from '../../constants';
+import { CitizenPage } from '../CitizenPortal';
 
 
-type WalletTab = 'overview' | 'id_cards' | 'documents' | 'payments' | 'security';
+type WalletTab = 'overview' | 'civic_services' | 'id_cards' | 'documents' | 'payments' | 'security';
 
 interface NagarikWalletPageProps {
     wallet: WalletDocument[];
     onAddDocument: () => void;
     onOpenQr: () => void;
+    services: Service[];
+    applications: Application[];
+    onNavigate: (page: CitizenPage) => void;
+    onQuickApply: (serviceCode: string) => void;
 }
 
 const getDocumentIcon = (docType: DocumentType) => {
@@ -123,6 +128,85 @@ const DocumentsTab: React.FC<{ documents: WalletDocument[] }> = ({ documents }) 
     );
 };
 
+const CivicServicesTab: React.FC<{
+    services: Service[];
+    applications: Application[];
+    onNavigate: (page: CitizenPage) => void;
+    onQuickApply: (serviceCode: string) => void;
+}> = ({ services, applications, onNavigate, onQuickApply }) => {
+    const recentApplications = applications.slice(0, 2);
+
+    const categories = [
+        { name: 'Transport', icon: CarIcon, color: 'text-blue-500' },
+        { name: 'Revenue', icon: CreditCardIcon, color: 'text-red-500' },
+        { name: 'Civil Registration', icon: UsersIcon, color: 'text-green-500' },
+        { name: 'Health', icon: HealthIcon, color: 'text-pink-500' },
+        { name: 'Education', icon: BookOpenIcon, color: 'text-purple-500' },
+        { name: 'Legal', icon: ScaleIcon, color: 'text-yellow-500' },
+    ];
+    
+    return (
+        <div className="space-y-8">
+            <div>
+                 <h3 className="text-xl font-bold">Civic Service Hub</h3>
+                 <p className="text-gray-500 mt-1">Apply for, track, and manage all your government service requests in one place.</p>
+            </div>
+            
+             <div className="relative">
+                <input type="text" placeholder="Search for a service... e.g., 'Renew License'" className="w-full p-3 pl-10 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-md">
+                <h3 className="font-bold text-lg mb-4">Service Categories</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {categories.map(cat => (
+                        <button key={cat.name} onClick={() => onNavigate('service-catalog')} className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:shadow-md transition-all group">
+                            <cat.icon className={`w-8 h-8 ${cat.color} mb-2 group-hover:scale-110 transition-transform`} />
+                            <span className="text-sm font-semibold text-gray-700 text-center">{cat.name}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                    <h3 className="font-bold text-lg">My Recent Applications</h3>
+                     {recentApplications.length > 0 ? (
+                        <div className="space-y-4 mt-4">
+                            {recentApplications.map(app => {
+                                const service = services.find(s => s.id === app.serviceId);
+                                return (
+                                    <div key={app.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">{service?.name}</p>
+                                                <p className="text-sm text-gray-500">Submitted: {app.submittedAt.toLocaleDateString()}</p>
+                                            </div>
+                                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${ app.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{app.status}</span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-center text-gray-500 py-4 mt-4">No recent applications found.</p>
+                    )}
+                     <button onClick={() => onNavigate('my-applications')} className="mt-4 text-sm font-medium text-blue-600 hover:underline w-full text-right">View All Applications</button>
+                </div>
+                 <div className="bg-white p-6 rounded-xl shadow-md">
+                    <h3 className="font-bold text-lg flex items-center mb-4"><SparklesIcon className="w-5 h-5 mr-2 text-purple-500"/> What's New</h3>
+                     <ul className="space-y-3 text-sm text-gray-700">
+                        <li className="flex items-center"><CheckCircleIcon className="w-4 h-4 text-green-500 mr-2"/> AI-powered form auto-fill.</li>
+                        <li className="flex items-center"><CheckCircleIcon className="w-4 h-4 text-green-500 mr-2"/> Predictive ETA for service completion.</li>
+                        <li className="flex items-center"><CheckCircleIcon className="w-4 h-4 text-green-500 mr-2"/> Secure digital signature verification.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const PaymentsTab: React.FC = () => (
     <div className="space-y-8">
         <div>
@@ -201,7 +285,7 @@ const SecurityTab: React.FC = () => (
 
 
 // --- Main Component ---
-const NagarikWalletPage: React.FC<NagarikWalletPageProps> = ({ wallet, onAddDocument, onOpenQr }) => {
+const NagarikWalletPage: React.FC<NagarikWalletPageProps> = ({ wallet, onAddDocument, onOpenQr, services, applications, onNavigate, onQuickApply }) => {
     const [activeTab, setActiveTab] = useState<WalletTab>('overview');
 
     const TabButton: React.FC<{ tabName: WalletTab; label: string; icon: React.ElementType }> = ({ tabName, label, icon: Icon }) => (
@@ -221,6 +305,7 @@ const NagarikWalletPage: React.FC<NagarikWalletPageProps> = ({ wallet, onAddDocu
     const renderContent = () => {
         switch(activeTab) {
             case 'overview': return <OverviewTab onOpenQr={onOpenQr} />;
+            case 'civic_services': return <CivicServicesTab services={services} applications={applications} onNavigate={onNavigate} onQuickApply={onQuickApply} />;
             case 'id_cards': return <IdCardsTab documents={wallet} />;
             case 'documents': return <DocumentsTab documents={wallet} />;
             case 'payments': return <PaymentsTab />;
@@ -242,6 +327,7 @@ const NagarikWalletPage: React.FC<NagarikWalletPageProps> = ({ wallet, onAddDocu
             <div className="bg-white rounded-xl shadow-md p-2 mb-6">
                 <nav className="flex items-center space-x-2">
                     <TabButton tabName="overview" label="Overview" icon={WalletIcon} />
+                    <TabButton tabName="civic_services" label="Civic Services" icon={BriefcaseIcon} />
                     <TabButton tabName="id_cards" label="ID Cards" icon={IdCardIcon} />
                     <TabButton tabName="documents" label="Documents" icon={FileTextIcon} />
                     <TabButton tabName="payments" label="Payments" icon={CreditCardIcon} />

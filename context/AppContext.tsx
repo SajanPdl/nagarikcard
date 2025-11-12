@@ -1,8 +1,7 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
-import { Profile, Application, WalletDocument, Service, Office } from '../types';
+import { Profile, Application, WalletDocument, Service } from '../types';
 import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import supabase from '../lib/supabase';
 
 type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login';
 
@@ -237,16 +236,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return { ...state, allCitizenProfiles: action.payload.profiles, allWalletDocuments: action.payload.documents };
     case 'UPDATE_PROFILE': {
         const updatedProfile = action.payload;
+        const isSelfUpdate = state.profile?.id === updatedProfile.id;
+        
+        const message = isSelfUpdate && state.profile.role === 'citizen'
+            ? 'Your profile has been successfully updated.'
+            : `Profile for ${updatedProfile.name} has been updated.`;
+
         return {
             ...state,
             allCitizenProfiles: state.allCitizenProfiles.map(p =>
                 p.id === updatedProfile.id ? updatedProfile : p
             ),
-            // Also update the main profile if the admin is editing themselves (edge case)
-            profile: state.profile?.id === updatedProfile.id ? updatedProfile : state.profile,
+            profile: isSelfUpdate ? updatedProfile : state.profile,
             notifications: [
                 ...state.notifications,
-                { id: Date.now(), message: `Profile for ${updatedProfile.name} has been updated.`, type: 'success' }
+                { id: Date.now(), message, type: 'success' }
             ]
         }
     }
@@ -305,218 +309,40 @@ export const AppContext = createContext<{
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-    useEffect(() => {
-        const loadInitial = async () => {
-            if (!supabase) {
-                // fallback to mocks
-                dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
-                // This pre-populates admin-viewable data
-                dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
-                        profiles: MOCK_ALL_CITIZENS,
-                        documents: MOCK_ALL_WALLET_DOCS
-                }});
-                dispatch({ type: 'SET_LOADING', payload: false });
-                return;
-            }
+  useEffect(() => {
+    dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
+    // This pre-populates admin-viewable data
+    dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
+        profiles: MOCK_ALL_CITIZENS,
+        documents: MOCK_ALL_WALLET_DOCS
+    }});
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }, []);
 
-            dispatch({ type: 'SET_LOADING', payload: true });
-
-            try {
-                // fetch offices, services, service_offices, profiles, wallet_documents, applications
-                const [officesRes, servicesRes, serviceOfficesRes, profilesRes, walletsRes, appsRes] = await Promise.all([
-                    supabase.from('offices').select('*'),
-                    supabase.from('services').select('*'),
-                    supabase.from('service_offices').select('*'),
-                    supabase.from('profiles').select('*'),
-                    supabase.from('wallet_documents').select('*'),
-                    supabase.from('applications').select('*')
-                ]);
-
-                const offices: Office[] = (officesRes.data || []).map((o: any) => ({ id: o.id, name: o.name }));
-
-                const serviceOffices = serviceOfficesRes.data || [];
-
-                const services: Service[] = (servicesRes.data || []).map((s: any) => {
-                    const officeIds = serviceOffices.filter((so: any) => so.service_id === s.id).map((so: any) => so.office_id);
-                    const serviceOffs = offices.filter(o => officeIds.includes(o.id));
-                    return {
-                        id: s.id,
-                        code: s.code,
-                        name: s.name,
-                        category: s.category,
-                        description: s.description,
-                        requiredDocs: s.required_docs || [],
-                        estimatedTime: s.estimated_time || '',
-                        fee: s.fee || 0,
-                        offices: serviceOffs,
-                        formSchema: s.form_schema || {}
-                    } as Service;
-                });
-
-                const profiles: Profile[] = (profilesRes.data || []).map((p: any) => ({
-                    id: p.id,
-                    name: p.name,
-                    phone: p.phone,
-                    email: p.email,
-                    role: p.role,
-                    officeId: p.office_id
-                }));
-
-                const wallets: WalletDocument[] = (walletsRes.data || []).map((d: any) => ({
-                    id: d.id,
-                    user_id: d.user_id,
-                    docType: d.doc_type,
-                    fileName: d.file_name,
-                    hash: d.hash,
-                    verificationStatus: d.verification_status,
-                    storage_path: d.storage_path,
-                    issuedDate: d.issued_date,
-                    expiryDate: d.expiry_date,
-                    documentNumber: d.document_number
-                }));
-
-                const applications: Application[] = (appsRes.data || []).map((a: any) => ({
-                    id: a.id,
-                    serviceId: a.service_id,
-                    userId: a.user_id,
-                    submittedAt: a.submitted_at ? new Date(a.submitted_at) : new Date(),
-                    status: a.status,
-                    paymentStatus: a.payment_status,
-                    statusHistory: (a.status_history || []).map((h: any) => ({ status: h.status, timestamp: h.timestamp ? new Date(h.timestamp) : new Date(), hash: h.hash })),
-                    token: a.token,
-                    officeId: a.office_id,
-                    formData: a.form_data || {},
-                    predictedDelay: a.predicted_delay,
-                    sentiment: a.sentiment
-                }));
-
-                dispatch({ type: 'SET_SERVICES', payload: services });
-                dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: { profiles, documents: wallets } });
-                // Do not auto-set wallet/applications until a profile is selected; still store global applications for admin use
-                dispatch({ type: 'SET_LOADING', payload: false });
-            } catch (err) {
-                // On error use mocks
-                // eslint-disable-next-line no-console
-                console.error('[supabase] failed to load initial data, falling back to mocks', err);
-                dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
-                dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
-                        profiles: MOCK_ALL_CITIZENS,
-                        documents: MOCK_ALL_WALLET_DOCS
-                }});
-                dispatch({ type: 'SET_LOADING', payload: false });
-            }
-        };
-
-        loadInitial();
-    }, []);
-
-    useEffect(() => {
-        const loadProfileData = async () => {
-            if (!state.profile) {
+  useEffect(() => {
+    if (state.profile) {
+        if (state.profile.role === 'citizen') {
+            // Check if this is the mock user to load their data
+            if (state.profile.id === 'a1b2c3d4-e5f6-7890-1234-567890abcdef') {
+                dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
+                dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
+            } else {
+                 // It's a newly signed-up user
                 dispatch({ type: 'SET_WALLET', payload: [] });
                 dispatch({ type: 'SET_APPLICATIONS', payload: [] });
-                return;
             }
-
-            // If supabase not configured, keep mock behaviour
-            if (!supabase) {
-                if (state.profile.role === 'citizen') {
-                    if (state.profile.id === 'a1b2c3d4-e5f6-7890-1234-567890abcdef') {
-                        dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
-                        dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-                    } else {
-                        dispatch({ type: 'SET_WALLET', payload: [] });
-                        dispatch({ type: 'SET_APPLICATIONS', payload: [] });
-                    }
-                } else if (state.profile.role === 'admin') {
-                    dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-                } else {
-                    dispatch({ type: 'SET_WALLET', payload: [] });
-                    dispatch({ type: 'SET_APPLICATIONS', payload: [] });
-                }
-                return;
-            }
-
-            try {
-                if (state.profile.role === 'citizen') {
-                    // fetch wallet docs and applications for this user
-                    const [walletRes, appsRes] = await Promise.all([
-                        supabase.from('wallet_documents').select('*').eq('user_id', state.profile.id),
-                        supabase.from('applications').select('*').eq('user_id', state.profile.id)
-                    ]);
-
-                    const wallet: WalletDocument[] = (walletRes.data || []).map((d: any) => ({
-                        id: d.id,
-                        user_id: d.user_id,
-                        docType: d.doc_type,
-                        fileName: d.file_name,
-                        hash: d.hash,
-                        verificationStatus: d.verification_status,
-                        storage_path: d.storage_path,
-                        issuedDate: d.issued_date,
-                        expiryDate: d.expiry_date,
-                        documentNumber: d.document_number
-                    }));
-
-                    const applications: Application[] = (appsRes.data || []).map((a: any) => ({
-                        id: a.id,
-                        serviceId: a.service_id,
-                        userId: a.user_id,
-                        submittedAt: a.submitted_at ? new Date(a.submitted_at) : new Date(),
-                        status: a.status,
-                        paymentStatus: a.payment_status,
-                        statusHistory: (a.status_history || []).map((h: any) => ({ status: h.status, timestamp: h.timestamp ? new Date(h.timestamp) : new Date(), hash: h.hash })),
-                        token: a.token,
-                        officeId: a.office_id,
-                        formData: a.form_data || {},
-                        predictedDelay: a.predicted_delay,
-                        sentiment: a.sentiment
-                    }));
-
-                    dispatch({ type: 'SET_WALLET', payload: wallet });
-                    dispatch({ type: 'SET_APPLICATIONS', payload: applications });
-                } else if (state.profile.role === 'admin') {
-                    // admin: show all applications (already loaded in initial effect)
-                    // but ensure state.applications is set if empty
-                    if (state.applications.length === 0) {
-                        const appsRes = await supabase.from('applications').select('*');
-                        const applications: Application[] = (appsRes.data || []).map((a: any) => ({
-                            id: a.id,
-                            serviceId: a.service_id,
-                            userId: a.user_id,
-                            submittedAt: a.submitted_at ? new Date(a.submitted_at) : new Date(),
-                            status: a.status,
-                            paymentStatus: a.payment_status,
-                            statusHistory: (a.status_history || []).map((h: any) => ({ status: h.status, timestamp: h.timestamp ? new Date(h.timestamp) : new Date(), hash: h.hash })),
-                            token: a.token,
-                            officeId: a.office_id,
-                            formData: a.form_data || {},
-                            predictedDelay: a.predicted_delay,
-                            sentiment: a.sentiment
-                        }));
-                        dispatch({ type: 'SET_APPLICATIONS', payload: applications });
-                    }
-                } else {
-                    // kiosk: empty wallet/applications unless specific logic added
-                    dispatch({ type: 'SET_WALLET', payload: [] });
-                    dispatch({ type: 'SET_APPLICATIONS', payload: [] });
-                }
-            } catch (err) {
-                // on error fallback to mocks for the profile
-                // eslint-disable-next-line no-console
-                console.error('[supabase] failed to load profile data, falling back to mocks', err);
-                if (state.profile.role === 'citizen' && state.profile.id === 'a1b2c3d4-e5f6-7890-1234-567890abcdef') {
-                    dispatch({ type: 'SET_WALLET', payload: MOCK_WALLET });
-                    dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-                } else {
-                    dispatch({ type: 'SET_WALLET', payload: [] });
-                    dispatch({ type: 'SET_APPLICATIONS', payload: [] });
-                }
-            }
-        };
-
-        loadProfileData();
-    }, [state.profile]);
+        } else if(state.profile.role === 'admin') {
+            dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
+            // Admin data already loaded in initial effect
+        } else { // Kiosk
+            dispatch({ type: 'SET_WALLET', payload: [] });
+            dispatch({ type: 'SET_APPLICATIONS', payload: [] });
+        }
+    } else {
+        dispatch({ type: 'SET_WALLET', payload: [] });
+        dispatch({ type: 'SET_APPLICATIONS', payload: [] });
+    }
+  }, [state.profile]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
