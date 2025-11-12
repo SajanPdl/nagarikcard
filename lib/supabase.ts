@@ -23,6 +23,29 @@ const getEnv = () => {
 };
 
 const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getEnv();
+// Masked runtime diagnostics: log which env sources are present without printing secrets.
+const mask = (s: string | null | undefined) => {
+	if (!s) return 'MISSING';
+	if (s.length <= 10) return '*****';
+	return s.slice(0, 6) + '...' + s.slice(-4);
+};
+
+try {
+	// eslint-disable-next-line no-console
+	console.info('[supabase] runtime env check:', {
+		NEXT_PUBLIC_SUPABASE_URL: !!(typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.NEXT_PUBLIC_SUPABASE_URL),
+		VITE_SUPABASE_URL: !!(typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_URL),
+		process_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL || !!process.env.VITE_SUPABASE_URL,
+		NEXT_PUBLIC_SUPABASE_ANON_KEY: !!(typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+		VITE_SUPABASE_ANON_KEY: !!(typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_ANON_KEY),
+		process_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !!process.env.VITE_SUPABASE_ANON_KEY,
+		// masked values (helpful when debugging locally only)
+		masked_url: mask(SUPABASE_URL),
+		masked_anon: SUPABASE_ANON_KEY ? `LEN=${SUPABASE_ANON_KEY.length}` : 'MISSING'
+	});
+} catch (e) {
+	// ignore diagnostics in environments that cannot access import.meta
+}
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 	// Developer-friendly warning. The app will continue to work with mocks when client is not configured.
