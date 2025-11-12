@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
 import { AppContext } from './context/AppContext';
 import LandingPage from './pages/LandingPage';
-import CitizenPortal from './pages/CitizenPortal';
+// FIX: Changed to a named import as CitizenPortal.tsx does not have a default export.
+import { CitizenPortal } from './pages/CitizenPortal';
 import AdminPortal from './pages/AdminPortal';
 import KioskPortal from './pages/KioskPortal';
 import LoginPage from './pages/LoginPage';

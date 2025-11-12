@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Service, Application, WalletDocument, Profile } from '../types';
 import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon } from '../components/icons';
@@ -65,16 +65,118 @@ const NepalHeatmap: React.FC = () => (
     <div>
         <h4 className="font-semibold text-gray-700 mb-4">Request Density Heatmap</h4>
         <div className="bg-gray-100 p-4 rounded-lg flex justify-center items-center aspect-video">
-            <svg width="100%" height="100%" viewBox="0 0 550 280">
-                <path d="M545 229L521 217L515 198L485 186L474 163L435 163L418 174L388 163L336 128L281 127L229 113L208 92L167 71L124 53L101 43L70 41L45 42L25 53L4 74L1 95L12 116L40 128L57 141L95 151L124 162L167 178L205 192L249 203L282 220L319 231L345 237L392 240L439 240L488 234Z" fill="#e0e0e0" stroke="#a0a0a0" strokeWidth="2"/>
-                <circle cx="282" cy="220" r="15" fill="red" opacity="0.6"><title>Kathmandu: 150 Requests</title></circle>
-                <circle cx="124" cy="162" r="10" fill="orange" opacity="0.6"><title>Pokhara: 80 Requests</title></circle>
-                <circle cx="485" cy="186" r="8" fill="yellow" opacity="0.6"><title>Biratnagar: 50 Requests</title></circle>
-                 <circle cx="45" cy="100" r="7" fill="yellow" opacity="0.6"><title>Nepalgunj: 45 Requests</title></circle>
+            <svg width="100%" height="100%" viewBox="0 0 846 228">
+                <path d="M845.3,212.4l-31.1-15.3l-7.7-25.1l-38.6-15.4l-14.3-29.6l-50.5-0.1l-22.1,14.4l-38.9-14.2l-67.4-45.6L509,114.3l-67.1-18.4l-26.6-27.1L355,47.3L298.6,28L268.9,15.2l-40.4-2.8l-32.9,1.1l-26,14.4L114,68.3L89.1,93.4l14.2,28.2l35.7,16.5l22.7,17.2l49.2,13l42.6,14.3l49,18.4l43.7,18.1l56.8,14.3l42.6,15.3l42.5,14.3l27.1,8.6l59.4,3.7l60.7-0.4l63.2-8Z" fill="#e0e0e0" stroke="#a0a0a0" strokeWidth="1"/>
+                <circle cx="490" cy="140" r="15" fill="red" opacity="0.6"><title>Kathmandu: 150 Requests</title></circle>
+                <circle cx="320" cy="120" r="10" fill="orange" opacity="0.6"><title>Pokhara: 80 Requests</title></circle>
+                <circle cx="730" cy="190" r="8" fill="yellow" opacity="0.6"><title>Biratnagar: 50 Requests</title></circle>
+                <circle cx="150" cy="130" r="7" fill="yellow" opacity="0.6"><title>Nepalgunj: 45 Requests</title></circle>
             </svg>
         </div>
     </div>
 );
+
+const RealTimeVolumeChart: React.FC = () => {
+    const [data, setData] = useState<{ time: string, requests: number }[]>([]);
+
+    useEffect(() => {
+        const generateInitialData = () => {
+            const now = new Date();
+            const initialData = Array.from({ length: 24 }, (_, i) => {
+                const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+                return {
+                    time: `${date.getHours()}:00`,
+                    requests: Math.floor(Math.random() * 20) + 5,
+                };
+            });
+            setData(initialData);
+        };
+        generateInitialData();
+
+        const interval = setInterval(() => {
+            setData(prevData => {
+                const now = new Date();
+                const newData = [...prevData.slice(1)];
+                const lastRequests = newData[newData.length - 1].requests;
+                const newRequests = Math.max(5, lastRequests + Math.floor(Math.random() * 7) - 3);
+                newData.push({ time: `${now.getHours()}:${now.getMinutes()}`, requests: newRequests });
+                return newData;
+            });
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const SVG_WIDTH = 600;
+    const SVG_HEIGHT = 250;
+    const PADDING = 40;
+    const chartWidth = SVG_WIDTH - PADDING * 2;
+    const chartHeight = SVG_HEIGHT - PADDING * 2;
+
+    if (data.length === 0) return null;
+
+    const maxValue = Math.max(...data.map(d => d.requests), 10);
+    const xStep = chartWidth / (data.length - 1);
+
+    const getCoords = (requests: number, index: number) => {
+        const x = PADDING + index * xStep;
+        const y = SVG_HEIGHT - PADDING - (requests / maxValue) * chartHeight;
+        return { x, y };
+    };
+
+    const linePath = data.map((d, i) => {
+        const { x, y } = getCoords(d.requests, i);
+        return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    }).join(' ');
+
+    const areaPath = `${linePath} L${SVG_WIDTH - PADDING},${SVG_HEIGHT - PADDING} L${PADDING},${SVG_HEIGHT - PADDING} Z`;
+    const lastPoint = getCoords(data[data.length - 1].requests, data.length - 1);
+    
+    return (
+        <div>
+            <h4 className="font-semibold text-gray-700 mb-4">Real-time Request Volume (Last 24 Hours)</h4>
+            <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} className="w-full h-auto">
+                <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#003893" stopOpacity="0.3"/>
+                        <stop offset="100%" stopColor="#003893" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+
+                {/* Grid */}
+                {[0, 0.25, 0.5, 0.75, 1].map(tick => (
+                    <line key={tick}
+                        x1={PADDING} y1={SVG_HEIGHT - PADDING - tick * chartHeight}
+                        x2={SVG_WIDTH - PADDING} y2={SVG_HEIGHT - PADDING - tick * chartHeight}
+                        stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3,3"
+                    />
+                ))}
+
+                {/* Y Axis Labels */}
+                {[0, 0.5, 1].map(tick => (
+                    <text key={tick} x={PADDING - 8} y={SVG_HEIGHT - PADDING - tick * chartHeight + 4} textAnchor="end" className="text-xs fill-current text-gray-500">
+                        {Math.round(tick * maxValue)}
+                    </text>
+                ))}
+
+                {/* X Axis Labels */}
+                 <text x={PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="start" className="text-xs fill-current text-gray-500">24h ago</text>
+                 <text x={PADDING + chartWidth / 2} y={SVG_HEIGHT - PADDING + 20} textAnchor="middle" className="text-xs fill-current text-gray-500">12h ago</text>
+                 <text x={SVG_WIDTH - PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="end" className="text-xs fill-current text-gray-500">Now</text>
+                
+                <path d={areaPath} fill="url(#areaGradient)" style={{ transition: 'd 0.3s ease-in-out' }}/>
+                <path d={linePath} fill="none" stroke="#003893" strokeWidth="2" style={{ transition: 'd 0.3s ease-in-out' }} />
+
+                {/* Live point indicator */}
+                <circle cx={lastPoint.x} cy={lastPoint.y} r="8" fill="#003893" fillOpacity="0.2">
+                    <animate attributeName="r" from="4" to="12" dur="1.5s" begin="0s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" from="1" to="0" dur="1.5s" begin="0s" repeatCount="indefinite" />
+                </circle>
+                <circle cx={lastPoint.x} cy={lastPoint.y} r="4" fill="#003893" stroke="white" strokeWidth="2" />
+            </svg>
+        </div>
+    );
+};
 
 const AnalyticsPage: React.FC<{ applications: Application[], services: Service[] }> = ({ applications, services }) => {
     
@@ -98,8 +200,11 @@ const AnalyticsPage: React.FC<{ applications: Application[], services: Service[]
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
             <h2 className="text-2xl font-bold mb-6">Analytics & Reports</h2>
             <div className="space-y-8">
-                <BarChart title="Service Request Volume" data={serviceVolumeData} />
-                <div className="grid md:grid-cols-2 gap-8 pt-8 border-t">
+                <div className="pb-8 border-b border-gray-200">
+                    <RealTimeVolumeChart />
+                </div>
+                <BarChart title="Total Request Volume By Service" data={serviceVolumeData} />
+                <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-gray-200">
                     <SentimentDonut data={sentimentData} />
                     <NepalHeatmap />
                 </div>

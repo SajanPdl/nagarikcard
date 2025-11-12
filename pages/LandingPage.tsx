@@ -4,55 +4,117 @@ import Header from '../components/Header';
 import { 
     NepalFlagIcon, CheckCircleIcon, UploadCloudIcon,
     FileTextIcon, QrCodeIcon, WalletIcon, ShieldLockIcon, ZapIcon, UsersIcon, BuildingIcon, BriefcaseIcon,
-    FilePlusIcon, SparklesIcon, ArrowRightIcon, BookOpenIcon
+    FilePlusIcon, SparklesIcon, ArrowRightIcon, BookOpenIcon, MessageSquareIcon
 } from '../components/icons';
 
 const WorkflowAnimation: React.FC = () => {
     return (
         <div className="relative w-full h-[450px] flex items-center justify-center">
             <style>{`
-                @keyframes draw-path { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-                .path-animate { stroke-dasharray: 1000; animation: draw-path 3s ease-out 0.5s forwards; }
-
                 @keyframes pop-in { 
-                    0% { transform: scale(0.5); opacity: 0; }
-                    80% { transform: scale(1.1); opacity: 1; }
+                    0% { transform: scale(0.8); opacity: 0; }
+                    80% { transform: scale(1.05); opacity: 1; }
                     100% { transform: scale(1); opacity: 1; }
                 }
-                .pop-in-1 { animation: pop-in 0.5s ease-out 0.2s forwards; opacity: 0; }
-                .pop-in-2 { animation: pop-in 0.5s ease-out 1.2s forwards; opacity: 0; }
-                .pop-in-3 { animation: pop-in 0.5s ease-out 2.2s forwards; opacity: 0; }
-                .pop-in-4 { animation: pop-in 0.5s ease-out 3.2s forwards; opacity: 0; }
+                .pop-in { animation: pop-in 0.5s ease-out forwards; opacity: 0; }
+                .delay-1 { animation-delay: 0.2s; }
+                .delay-2 { animation-delay: 0.3s; }
+                .delay-3 { animation-delay: 0.4s; }
+                .delay-4 { animation-delay: 0.5s; }
 
-                @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,255,255,0.4)); } 50% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); } }
-                .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+                @keyframes move-on-path {
+                    from { offset-distance: 0%; opacity: 0; }
+                    5% { opacity: 1; }
+                    95% { opacity: 1; }
+                    to { offset-distance: 100%; opacity: 0; }
+                }
+                @keyframes icon-pulse-glow {
+                    0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(200, 16, 46, 0.5); transform: scale(1); }
+                    50% { box-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(200, 16, 46, 0.7); transform: scale(1.05); }
+                }
+                #request-icon {
+                    offset-path: path('M 50 150 C 125 50, 175 50, 250 150 S 325 250, 350 250');
+                    animation: move-on-path 6s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards,
+                               icon-pulse-glow 2s infinite 1.5s;
+                    opacity: 0;
+                    will-change: offset-distance;
+                }
+                
+                @keyframes draw-progress-path { 
+                    from { stroke-dashoffset: 1000; } 
+                    to { stroke-dashoffset: 0; } 
+                }
+                .path-progress-animate { 
+                    stroke-dasharray: 1000; 
+                    stroke-dashoffset: 1000;
+                    animation: draw-progress-path 6s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+                }
+
+                @keyframes stage-pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); border-color: rgba(255, 255, 255, 0.3); }
+                    50% { transform: scale(1.1); box-shadow: 0 0 25px 5px rgba(255, 255, 255, 0.4); border-color: rgba(255, 255, 255, 0.8); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); border-color: rgba(255, 255, 255, 0.3); }
+                }
+
+                @keyframes arrival-pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); }
+                    50% { transform: scale(1.25); box-shadow: 0 0 40px rgba(45, 212, 191, 1); }
+                    100% { transform: scale(1); box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); }
+                }
+
+                @keyframes pulse-glow-final { 
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); } 
+                    50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(45, 212, 191, 1); } 
+                }
+
+                /* Timed animations for each stage */
+                .stage-1-pulse { animation: stage-pulse 0.7s ease-out 1.5s; }
+                .stage-2-pulse { animation: stage-pulse 0.7s ease-out 3.5s; }
+                .stage-3-pulse { animation: stage-pulse 0.7s ease-out 5.5s; }
+                .final-node-glow { 
+                    animation: arrival-pulse 0.8s ease-out 7.5s, 
+                               pulse-glow-final 2s infinite 8.3s; 
+                }
             `}</style>
+            
             <svg viewBox="0 0 400 300" className="absolute w-full h-full">
-                <path d="M 50 150 C 125 50, 175 50, 250 150 S 325 250, 350 250" stroke="#003893" strokeWidth="2" fill="none" className="path-animate opacity-50" />
+                {/* Background Path */}
+                <path d="M 50 150 C 125 50, 175 50, 250 150 S 325 250, 350 250" stroke="#003893" strokeWidth="3" strokeOpacity="0.5" fill="none" />
+                {/* Progress Path */}
+                <path d="M 50 150 C 125 50, 175 50, 250 150 S 325 250, 350 250" stroke="#FFFFFF" strokeWidth="3" fill="none" className="path-progress-animate" />
             </svg>
+            
+            <div id="request-icon" className="absolute w-10 h-10 -ml-5 -mt-5 flex items-center justify-center rounded-full bg-[#C8102E]">
+                 <FileTextIcon className="w-6 h-6 text-white" />
+            </div>
+
             <div className="relative w-full h-full flex justify-between items-center px-4">
-                <div className="absolute top-[120px] left-[20px] pop-in-1">
-                    <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                <div className="absolute top-[120px] left-[20px] pop-in delay-1">
+                    <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/30 stage-1-pulse">
                         <FilePlusIcon className="w-8 h-8"/>
                         <span className="text-xs font-semibold mt-1">Submit</span>
+                        <span className="text-[10px] text-white/70">Citizen</span>
                     </div>
                 </div>
-                <div className="absolute top-[15px] left-[130px] pop-in-2">
-                     <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                <div className="absolute top-[15px] left-[130px] pop-in delay-2">
+                     <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/30 stage-2-pulse">
                         <SparklesIcon className="w-8 h-8"/>
-                        <span className="text-xs font-semibold mt-1">AI Triage</span>
+                        <span className="text-xs font-semibold mt-1">Processing</span>
+                         <span className="text-[10px] text-white/70">AI Triage</span>
                     </div>
                 </div>
-                 <div className="absolute top-[120px] right-[100px] pop-in-3">
-                     <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                 <div className="absolute top-[120px] right-[100px] pop-in delay-3">
+                     <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/30 stage-3-pulse">
                         <BriefcaseIcon className="w-8 h-8"/>
-                        <span className="text-xs font-semibold mt-1">GovOps</span>
+                        <span className="text-xs font-semibold mt-1">Review</span>
+                         <span className="text-[10px] text-white/70">GovOps</span>
                     </div>
                 </div>
-                <div className="absolute top-[220px] right-[20px] pop-in-4">
-                     <div className="w-24 h-24 bg-green-500/80 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-2xl border-2 border-white/50 pulse-glow">
+                <div className="absolute top-[220px] right-[20px] pop-in delay-4">
+                     <div className="w-24 h-24 bg-teal-500/80 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-2xl border-2 border-white/50 final-node-glow">
                         <CheckCircleIcon className="w-8 h-8"/>
-                        <span className="text-xs font-semibold mt-1">Approved</span>
+                        <span className="text-xs font-semibold mt-1">Confirmed</span>
+                        <span className="text-[10px] text-white/70">Citizen Notified</span>
                     </div>
                 </div>
             </div>
@@ -78,7 +140,15 @@ const LandingPage: React.FC = () => {
                 .fade-in-up-delay-3 { animation-delay: 0.6s; }
 
                 .hero-bg {
-                    background: linear-gradient(135deg, #003893 0%, #2a5298 100%);
+                    background: linear-gradient(135deg, #003893, #2a5298, #C8102E);
+                    background-size: 250% 250%;
+                    animation: gradient-animation 18s ease infinite;
+                }
+                
+                @keyframes gradient-animation {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
                 }
             `}</style>
             <Header showNav={true} />
@@ -215,6 +285,49 @@ const LandingPage: React.FC = () => {
                                 <BriefcaseIcon className="w-10 h-10 text-gray-700 mb-4"/>
                                 <h3 className="text-xl font-bold">Businesses / व्यवसाय</h3>
                                 <p className="mt-2 text-gray-600">Faster, more reliable verification processes for Know Your Customer (KYC) and other requirements.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Testimonials Section */}
+                <section className="py-20 lg:py-24 bg-white">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                        <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-800">Trusted by Citizens</h2>
+                        <p className="mt-2 text-lg text-gray-600">नागरिकहरूद्वारा विश्वास गरिएको</p>
+                        <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 flex flex-col">
+                                <MessageSquareIcon className="w-8 h-8 text-blue-400 mb-4 self-start" />
+                                <p className="text-gray-600 italic text-left flex-grow">"Renewing my license used to take a full day, running from one office to another. With GovFlow, I did it during my lunch break from my phone. Absolutely revolutionary for Nepal!"</p>
+                                <div className="mt-6 flex items-center self-start pt-4 border-t border-gray-200 w-full">
+                                    <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center font-bold text-blue-600 text-lg">SK</div>
+                                    <div className="ml-4 text-left">
+                                        <p className="font-bold text-gray-800">Suman Karki</p>
+                                        <p className="text-sm text-gray-500">IT Professional, Kathmandu</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 flex flex-col">
+                                 <MessageSquareIcon className="w-8 h-8 text-blue-400 mb-4 self-start" />
+                                <p className="text-gray-600 italic text-left flex-grow">"As a small business owner, the document verification process was always a headache. Now, I can track everything in one place. GovFlow saves me time and stress."</p>
+                                <div className="mt-6 flex items-center self-start pt-4 border-t border-gray-200 w-full">
+                                    <div className="w-12 h-12 rounded-full bg-red-200 flex items-center justify-center font-bold text-red-600 text-lg">RG</div>
+                                    <div className="ml-4 text-left">
+                                        <p className="font-bold text-gray-800">Rita Gurung</p>
+                                        <p className="text-sm text-gray-500">Shop Owner, Pokhara</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 flex flex-col">
+                                <MessageSquareIcon className="w-8 h-8 text-blue-400 mb-4 self-start" />
+                                <p className="text-gray-600 italic text-left flex-grow">"I helped my grandmother pay her land tax using GovFlow. She was amazed that we didn't have to travel to the city. This platform makes services accessible to everyone, young and old."</p>
+                                <div className="mt-6 flex items-center self-start pt-4 border-t border-gray-200 w-full">
+                                    <div className="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center font-bold text-green-600 text-lg">BM</div>
+                                    <div className="ml-4 text-left">
+                                        <p className="font-bold text-gray-800">Bishal Mishra</p>
+                                        <p className="text-sm text-gray-500">Student, Chitwan</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

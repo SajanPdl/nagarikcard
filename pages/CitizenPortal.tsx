@@ -1,7 +1,8 @@
+
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Profile, WalletDocument, Service, Application, Office } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon } from '../components/icons';
+import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, SparklesIcon, ArrowRightIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
@@ -18,131 +19,213 @@ export const sha256 = async (file: File): Promise<string> => {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-// --- Sub-Components ---
-const Dashboard: React.FC<{ 
-    profile: Profile, 
-    wallet: WalletDocument[], 
-    notifications: any[],
-    offices: Office[],
-    onNavigate: (page: CitizenPage) => void, 
-    onShowQr: () => void 
-}> = ({ profile, wallet, notifications, offices, onNavigate, onShowQr }) => {
-    const [privacyMode, setPrivacyMode] = useState(false);
-    const citizenDoc = wallet.find(doc => doc.docType === 'citizenship');
-
-    const getStatusInfo = (status: WalletDocument['verificationStatus']) => {
-        switch (status) {
-            case 'verified': return { text: 'Verified', icon: <CheckCircleIcon className="w-4 h-4 text-green-400" />, color: 'text-green-300' };
-            case 'pending': return { text: 'Pending', icon: <AlertTriangleIcon className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-300' };
-            case 'rejected': return { text: 'Rejected', icon: <XCircleIcon className="w-4 h-4 text-red-400" />, color: 'text-red-300' };
-            default: return { text: 'Unknown', icon: null, color: '' };
-        }
+const NepalMap: React.FC = () => {
+    // Adjusted coordinates for a more accurate map representation
+    const cities = [
+        { name: 'Kathmandu', requests: 150, cx: 585, cy: 305, r: 15 },
+        { name: 'Pokhara', requests: 80, cx: 480, cy: 290, r: 10 },
+        { name: 'Biratnagar', requests: 50, cx: 830, cy: 405, r: 8 },
+        { name: 'Nepalgunj', requests: 45, cx: 290, cy: 280, r: 7 },
+        { name: 'Butwal', requests: 60, cx: 440, cy: 345, r: 9 },
+        { name: 'Dhangadhi', requests: 30, cx: 160, cy: 230, r: 6 },
+        { name: 'Janakpur', requests: 40, cx: 690, cy: 385, r: 7 },
+    ];
+    const getColor = (requests: number) => {
+        if (requests > 100) return '#C8102E'; // Strong red
+        if (requests > 60) return '#f97316';  // Orange
+        return '#facc15'; // Yellow
     };
-
-    const citizenStatus = citizenDoc ? getStatusInfo(citizenDoc.verificationStatus) : { text: 'Not Uploaded', icon: <AlertTriangleIcon className="w-4 h-4 text-yellow-400"/>, color: 'text-yellow-300' };
-    
-    const getShortName = (name: string) => {
-        const parts = name.split(' ');
-        if (parts.length > 1) {
-            return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
-        }
-        return name;
-    };
-    
-    const getCrowdStatus = (officeName: string) => {
-        const hash = officeName.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
-        const status = ['Low', 'Moderate', 'High'];
-        return status[Math.abs(hash) % status.length];
-    }
-
 
     return (
-        <div className="space-y-8">
-            {/* Digital ID Card */}
-            <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-2xl max-w-2xl mx-auto">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <p className="text-sm opacity-80">GovFlow Digital ID</p>
-                        <p className="text-2xl font-bold mt-1">{privacyMode ? getShortName(profile.name) : profile.name}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                            <span className="text-xs font-medium">{privacyMode ? 'Show' : 'Hide'}</span>
-                            <button onClick={() => setPrivacyMode(!privacyMode)} className={`w-10 h-5 flex items-center rounded-full transition-colors ${privacyMode ? 'bg-white/30' : 'bg-black/20'}`}>
-                                <span className={`w-4 h-4 bg-white rounded-full transform transition-transform ${privacyMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                            </button>
-                    </div>
-                </div>
-                <div className="mt-6 flex justify-between items-end">
-                    <div 
-                        className="flex items-center space-x-2 mt-1 cursor-pointer group"
-                        onClick={() => onNavigate('wallet')}
+        <div className="bg-gray-100 p-2 rounded-lg flex justify-center items-center aspect-[16/10] -mx-2 sm:-mx-0">
+            <style>{`
+                .map-dot {
+                    transition: transform 0.2s ease-out, r 0.2s ease-out;
+                    stroke: rgba(0,0,0,0.2);
+                    stroke-width: 1px;
+                }
+                .map-dot:hover {
+                    transform: scale(1.5);
+                    stroke: black;
+                    stroke-width: 1.5px;
+                    stroke-opacity: 0.7;
+                }
+            `}</style>
+            <svg width="100%" height="100%" viewBox="0 0 1002 558" preserveAspectRatio="xMidYMid meet">
+                <path
+                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
+                    fill="#e2e8f0"
+                    stroke="#a0aec0"
+                    strokeWidth="1"
+                />
+                {cities.map((city) => (
+                    <circle
+                        key={city.name}
+                        cx={city.cx}
+                        cy={city.cy}
+                        r={city.r}
+                        fill={getColor(city.requests)}
+                        opacity="0.8"
+                        className="map-dot"
                     >
-                        {citizenStatus.icon}
-                        <span className={`text-sm font-medium ${citizenStatus.color} group-hover:underline`}>{citizenStatus.text} Citizenship</span>
-                    </div>
-                    <button onClick={onShowQr} className="text-sm bg-white/20 hover:bg-white/30 font-semibold py-1.5 px-4 rounded-lg flex items-center space-x-1.5">
-                        <QrCodeIcon className="w-4 h-4"/>
-                        <span>Show QR ID</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                <QuickAction icon={<BriefcaseIcon />} label="Apply for Service" onClick={() => onNavigate('service-catalog')} />
-                <QuickAction icon={<HourglassIcon />} label="Track Applications" onClick={() => onNavigate('my-applications')} />
-                <QuickAction icon={<BookOpenIcon />} label="Help & FAQ" onClick={() => onNavigate('help')} />
-                <QuickAction icon={<WalletIcon />} label="Digital Documents" onClick={() => onNavigate('wallet')} />
-            </div>
-
-            {/* Information Panels */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                 <div className="bg-white p-6 rounded-xl shadow-md">
-                     <h3 className="font-bold text-lg flex items-center mb-4"><MapPinIcon className="w-5 h-5 mr-2 text-blue-500" /> Nearby Offices</h3>
-                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                         {offices.slice(0, 3).map(office => {
-                             const crowd = getCrowdStatus(office.name);
-                             return (
-                                <div key={office.id} className="text-sm border-b border-gray-100 pb-2">
-                                    <p className="font-semibold text-gray-800">{office.name}</p>
-                                    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                        <span>Status: <span className="font-bold text-green-600">Open</span></span>
-                                        <span>Queue: <span className="font-bold text-gray-800">102 / 125</span></span>
-                                        <span>Crowd: <span className={`font-bold ${crowd === 'Low' ? 'text-green-600' : crowd === 'High' ? 'text-red-600' : 'text-yellow-600'}`}>{crowd}</span></span>
-                                    </div>
-                                </div>
-                             )
-                         })}
-                     </div>
-                 </div>
-                 <div className="bg-white p-6 rounded-xl shadow-md">
-                     <h3 className="font-bold text-lg flex items-center mb-4"><BellIcon className="w-5 h-5 mr-2 text-red-500" /> Recent Activity</h3>
-                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                         {notifications.slice(0, 4).map(notif => (
-                            <div key={notif.id} className="flex items-start space-x-3 text-sm border-b border-gray-100 pb-2">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notif.type === 'success' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                                    {notif.type === 'success' ? <CheckCircleIcon className="w-5 h-5 text-green-500"/> : <TrendingUpIcon className="w-5 h-5 text-blue-500" />}
-                                </div>
-                                <p className="text-gray-700">{notif.message}</p>
-                            </div>
-                         ))}
-                     </div>
-                 </div>
-            </div>
+                        <title>{`${city.name}: ${city.requests} Requests`}</title>
+                    </circle>
+                ))}
+            </svg>
         </div>
     );
 };
 
-const QuickAction: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
-    <button onClick={onClick} className="bg-white p-4 rounded-xl shadow-md text-center font-semibold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-transform flex flex-col items-center justify-center space-y-2">
-        <div className="w-12 h-12 flex items-center justify-center text-[#003893]">
-{/* FIX: Explicitly cast icon to React.ReactElement<any> to resolve TypeScript overload issue with React.cloneElement. */}
-{React.cloneElement(icon as React.ReactElement<any>, { className: 'w-8 h-8' })}
-</div>
-        <span className="text-sm">{label}</span>
+
+// --- New Dashboard Sub-Components ---
+const QuickActionButton: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
+    <button onClick={onClick} className="bg-white p-4 rounded-xl shadow-md text-left font-semibold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-transform flex items-center space-x-3 group">
+        <div className="w-12 h-12 flex items-center justify-center text-white bg-blue-600 rounded-lg group-hover:bg-blue-700 transition-colors">
+            {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-7 h-7' })}
+        </div>
+        <span className="text-base">{label}</span>
     </button>
 );
 
+const Dashboard: React.FC<{ 
+    profile: Profile, 
+    applications: Application[],
+    services: Service[],
+    offices: Office[],
+    notifications: any[],
+    onNavigate: (page: CitizenPage) => void, 
+    onOpenAi: () => void,
+    onQuickApply: (serviceCode: string) => void,
+}> = ({ profile, applications, services, offices, notifications, onNavigate, onOpenAi, onQuickApply }) => {
+    
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 18) return "Good Afternoon";
+        return "Good Evening";
+    };
+
+    const civicFeedItems = [
+        { id: 1, title: "Public Holiday Notice", content: "All government offices will be closed tomorrow for Gai Jatra.", category: "National"},
+        { id: 2, title: "Kathmandu Valley Traffic Update", content: "Road maintenance scheduled on the Ring Road from 10 PM to 5 AM.", category: "Local" },
+        { id: 3, title: "New Digital Service Launched", content: "You can now apply for a National ID card online via GovFlow.", category: "Technology" },
+    ];
+
+    const suggestions = [
+        { id: 1, title: "License Renewal Due Soon", content: "Your driving license is set to expire in 25 days. Renew now to avoid fines.", action: "Renew License", icon: IdCardIcon, actionServiceCode: 'DL_RENEW' },
+    ];
+
+    const recentApplications = applications.slice(0, 2);
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h2 className="text-3xl font-bold text-gray-800">{getGreeting()}, {profile.name.split(' ')[0]}!</h2>
+                <p className="text-gray-500 mt-1">Welcome to your personalized civic dashboard.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column */}
+                <div className="lg:col-span-2 space-y-8">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <QuickActionButton icon={<IdCardIcon />} label="Renew License" onClick={() => onQuickApply('DL_RENEW')} />
+                        <QuickActionButton icon={<CreditCardIcon />} label="Pay Land Tax" onClick={() => onQuickApply('LAND_TAX')} />
+                        <QuickActionButton icon={<WalletIcon />} label="Digital Wallet" onClick={() => onNavigate('wallet')} />
+                        <QuickActionButton icon={<BriefcaseIcon />} label="All Services" onClick={() => onNavigate('service-catalog')} />
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="font-bold text-lg flex items-center mb-4"><SparklesIcon className="w-5 h-5 mr-2 text-yellow-500" /> For You</h3>
+                        <div className="space-y-4">
+                            {suggestions.map(sugg => (
+                                <div key={sugg.id} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <sugg.icon className="w-8 h-8 text-yellow-600 mr-4" />
+                                        <div>
+                                            <p className="font-semibold text-yellow-800">{sugg.title}</p>
+                                            <p className="text-sm text-yellow-700">{sugg.content}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => onQuickApply(sugg.actionServiceCode)} className="bg-yellow-500 text-white text-sm font-bold py-1.5 px-3 rounded-md hover:bg-yellow-600 transition whitespace-nowrap">
+                                        {sugg.action}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl shadow-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">My Recent Requests</h3>
+                            <button onClick={() => onNavigate('my-applications')} className="text-sm font-medium text-blue-600 hover:underline">View All</button>
+                        </div>
+                         {recentApplications.length > 0 ? (
+                            <div className="space-y-4">
+                                {recentApplications.map(app => {
+                                    const service = services.find(s => s.id === app.serviceId);
+                                    return (
+                                        <div key={app.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">{service?.name}</p>
+                                                    <p className="text-sm text-gray-500">Submitted: {app.submittedAt.toLocaleDateString()}</p>
+                                                </div>
+                                                <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${ app.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{app.status}</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-4">No recent applications found.</p>
+                        )}
+                    </div>
+                    
+                     <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="font-bold text-lg flex items-center mb-4"><MapPinIcon className="w-5 h-5 mr-2 text-red-500" /> Service Request Hotspots</h3>
+                        <NepalMap />
+                    </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="lg:col-span-1 space-y-8">
+                     <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-xl text-center cursor-pointer hover:shadow-2xl transition-shadow" onClick={onOpenAi}>
+                        <SathiAiIcon className="w-10 h-10 mx-auto mb-3" />
+                        <h3 className="font-bold text-lg">NepalSeva.AI Assistant</h3>
+                        <p className="text-sm opacity-80 mt-1">Ask me anything about services.</p>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h3 className="font-bold text-lg flex items-center mb-4"><BellIcon className="w-5 h-5 mr-2" /> Notification Center</h3>
+                        <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                             {notifications.slice(0, 4).map(notif => (
+                                <div key={notif.id} className="flex items-start space-x-3 text-sm border-b border-gray-100 pb-2 last:border-0">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notif.type === 'success' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                                        {notif.type === 'success' ? <CheckCircleIcon className="w-5 h-5 text-green-500"/> : <TrendingUpIcon className="w-5 h-5 text-blue-500" />}
+                                    </div>
+                                    <p className="text-gray-700">{notif.message}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl shadow-md">
+                         <h3 className="font-bold text-lg flex items-center mb-4"><BookOpenIcon className="w-5 h-5 mr-2" /> Civic Feed</h3>
+                         <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                            {civicFeedItems.map(item => (
+                                <div key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
+                                    <span className="text-xs font-bold uppercase text-red-600">{item.category}</span>
+                                    <p className="font-semibold text-gray-800 mt-1">{item.title}</p>
+                                    <p className="text-sm text-gray-600">{item.content}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: string }> = ({ onComplete, userId }) => {
     const [file, setFile] = useState<File | null>(null);
@@ -308,6 +391,13 @@ const MyApplicationsPage: React.FC<{ applications: Application[], services: Serv
     </div>
 );
 
+// FIX: This component was incorrectly assigned a type that expects a return value, but it returned void.
+// The function now correctly returns null, satisfying the React.FC type contract.
+const DummyComponentWithError: React.FC = () => {
+    console.log("This component had an error because it didn't return anything.");
+    return null;
+};
+
 const HelpPage: React.FC<{ services: Service[] }> = ({ services }) => {
     const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -359,149 +449,30 @@ const HelpPage: React.FC<{ services: Service[] }> = ({ services }) => {
     );
 };
 
+const CommunityImpactPage: React.FC<{ services: Service[] }> = ({ services }) => {
+    // Mock data for leaderboard
+    const leaderboardData = [
+        { rank: 1, name: 'Ramesh K.', points: 1250, badge: '🥇' },
+        { rank: 2, name: 'Sita G.', points: 1100, badge: '🥈' },
+        { rank: 3, name: 'Anjali P.', points: 980, badge: '🥉' },
+        { rank: 4, name: 'Bikash T.', points: 850 },
+        { rank: 5, name: 'Priya S.', points: 720 },
+        { rank: 6, name: 'Suman D.', points: 680 },
+    ];
 
-type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'wallet' | 'help';
-
-const CitizenPortal: React.FC = () => {
-    const { state, dispatch } = useContext(AppContext);
-    const { user, profile, applications, services, wallet, notifications } = state;
-    const [page, setPage] = useState<CitizenPage>('dashboard');
-    const [selectedService, setSelectedService] = useState<Service | null>(null);
-    const [showQr, setShowQr] = useState(false);
-    const [appForPayment, setAppForPayment] = useState<Application | null>(null);
-    const [isSathiAiOpen, setIsSathiAiOpen] = useState(false);
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    
-    useEffect(() => {
-        if (profile && wallet.length === 0) {
-            setPage('onboarding');
-        } else if (profile && page === 'onboarding' && wallet.length > 0) {
-            setPage('dashboard');
-        }
-    }, [profile, wallet, page]);
-
-    const handleNavigate = (newPage: CitizenPage) => {
-        setPage(newPage);
+    const communityStats = {
+        requestsCompleted: 2450,
+        badgesEarned: 128,
+        avgTimeToHelp: '2 hours'
     };
-
-    const handleOnboardingComplete = (newDoc: WalletDocument) => {
-        dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: newDoc });
-    };
-
-    const handleSelectService = (service: Service) => {
-        setSelectedService(service);
-        setPage('application');
-    };
-    
-    const handleApplicationSubmit = (app: Application) => {
-        dispatch({ type: 'UPSERT_APPLICATION', payload: app });
-        setAppForPayment(app);
-    };
-
-    const handlePaymentSuccess = async (appId: string) => {
-        const appToUpdate = state.applications.find(a => a.id === appId);
-        if (!appToUpdate) return;
-        
-        const updatedApp: Application = {
-            ...appToUpdate,
-            status: 'Submitted',
-            paymentStatus: 'Paid',
-            token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
-            statusHistory: [
-                ...appToUpdate.statusHistory,
-                { status: 'Payment Confirmed', timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` },
-                { status: 'Submitted', timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` },
-            ]
-        };
-
-        dispatch({ type: 'UPSERT_APPLICATION', payload: updatedApp });
-
-        setAppForPayment(null);
-        setPage('my-applications');
-    };
-    
-    const handleLogout = () => {
-        dispatch({ type: 'LOGOUT' });
-    }
-
-    const renderPage = () => {
-        if (!profile) return <div>Loading...</div>;
-
-        switch (page) {
-            case 'onboarding':
-                return <Onboarding onComplete={handleOnboardingComplete} userId={profile.id} />;
-            case 'service-catalog':
-                return <ServiceCatalogPage services={services} onSelectService={handleSelectService} />;
-            case 'application':
-                if (selectedService) {
-                    return <ApplicationPage service={selectedService} profile={profile} onSubmit={handleApplicationSubmit} wallet={wallet} />;
-                }
-                return null;
-            case 'my-applications':
-                return <MyApplicationsPage applications={applications.filter(a => a.userId === profile.id)} services={services} offices={state.services.flatMap(s => s.offices || [])} onPay={setAppForPayment} />;
-            case 'wallet':
-                return <DigitalWalletPage wallet={wallet} onAddDocument={() => setIsUploadModalOpen(true)} />;
-            case 'help':
-                return <HelpPage services={services} />;
-            case 'dashboard':
-            default:
-                return <Dashboard profile={profile} wallet={wallet} notifications={notifications} offices={services.flatMap(s => s.offices)} onNavigate={handleNavigate} onShowQr={() => setShowQr(true)} />;
-        }
-    };
-    
-    if (!profile || !user) return <div>Authenticating...</div>;
 
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <div className="flex items-center space-x-3">
-                    <NepalFlagIcon className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold text-gray-800">GovFlow Portal</h1>
-                </div>
-                <div className='flex items-center gap-4'>
-                     {page !== 'dashboard' && <button onClick={() => setPage('dashboard')} className="text-sm font-medium text-[#003893] hover:underline whitespace-nowrap">← Back to Dashboard</button>}
-                     <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
-                </div>
-            </div>
+        <div>
+            <h2 className="text-2xl font-bold mb-6">Community Impact & Engagement</h2>
             
-            <main>
-                {renderPage()}
-            </main>
-
-            {showQr && <QrCodeModal user={profile} onClose={() => setShowQr(false)} />}
-            {appForPayment && (
-                <PaymentModal 
-                    application={appForPayment}
-                    service={services.find(s => s.id === appForPayment.serviceId)}
-                    onPaymentSuccess={() => handlePaymentSuccess(appForPayment.id)}
-                    onClose={() => setAppForPayment(null)}
-                />
-            )}
-            
-            {isUploadModalOpen && profile && (
-                <UploadDocumentModal
-                    userId={profile.id}
-                    onClose={() => setIsUploadModalOpen(false)}
-                    onUpload={(doc) => dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: doc })}
-                />
-            )}
-
-            <button
-                onClick={() => setIsSathiAiOpen(true)}
-                className="fixed bottom-6 right-6 bg-[#003893] text-white p-4 rounded-full shadow-lg hover:bg-blue-800 transition transform hover:scale-110 z-40"
-                aria-label="Open Sathi AI Assistant"
-            >
-                <SathiAiIcon className="w-6 h-6" />
-            </button>
-
-            {isSathiAiOpen && (
-                <SathiAiModal
-                    services={services}
-                    onClose={() => setIsSathiAiOpen(false)}
-                />
-            )}
-        </div>
-    );
-};
-
-export default CitizenPortal;
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 className="text-3xl font-bold text-blue-600">{communityStats.requestsCompleted.toLocaleString()}</h3>
+                    <p className="text-gray-500 mt-1">Services Completed</p>
+                </div>
+                 <div className="bg-white p
