@@ -15,7 +15,7 @@ interface Message {
 
 const SathiAiModal: React.FC<SathiAiModalProps> = ({ services, onClose }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'ai', text: 'Namaste! I am Sathi AI, your personal assistant for Nagarik Card services. How can I help you today?' }
+        { sender: 'ai', text: 'Namaste! I am Sathi AI, your personal assistant for GovFlow services. How can I help you today?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +38,7 @@ const SathiAiModal: React.FC<SathiAiModalProps> = ({ services, onClose }) => {
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
             
-            const systemInstruction = `You are Sathi AI, a friendly and helpful assistant for the Nagarik Card e-governance PWA from Nepal. Your goal is to help users understand and navigate government services. You must answer questions based ONLY on the following service data. Do not invent services or details. Be concise, clear, and format your answers for readability (e.g., use lists, bold text). If asked about something outside of this data, politely state that you can only provide information about the available services.
+            const systemInstruction = `You are Sathi AI, a friendly and helpful assistant for the GovFlow e-governance PWA from Nepal. Your goal is to help users understand and navigate government services. You must answer questions based ONLY on the following service data. Do not invent services or details. Be concise, clear, and format your answers for readability (e.g., use lists, bold text). If asked about something outside of this data, politely state that you can only provide information about the available services.
 
 Here is the available service data in JSON format:
 ${JSON.stringify(services, null, 2)}
@@ -115,7 +115,7 @@ ${JSON.stringify(services, null, 2)}
                         <button 
                             onClick={handleSend}
                             disabled={isLoading || !input.trim()}
-                            className="bg-[#C51E3A] text-white font-bold p-2 rounded-full shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="bg-[#C8102E] text-white font-bold p-2 rounded-full shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>

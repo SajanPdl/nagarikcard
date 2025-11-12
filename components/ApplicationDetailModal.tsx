@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Application, Service, Profile } from '../types';
-import { FileTextIcon, HourglassIcon, UsersIcon } from './icons';
+import { FileTextIcon, HourglassIcon, UsersIcon, CheckCircleIcon, XCircleIcon } from './icons';
+import { AppContext } from '../context/AppContext';
 
 interface ApplicationDetailModalProps {
   application?: Application | null;
@@ -10,7 +11,21 @@ interface ApplicationDetailModalProps {
 }
 
 const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({ application, service, citizen, onClose }) => {
+  const { dispatch } = useContext(AppContext);
   if (!application || !service || !citizen) return null;
+
+  const handleAction = (type: 'APPROVE' | 'REJECT' | 'REQUEST_INFO') => {
+      if(!application) return;
+
+      if(type === 'APPROVE') {
+          dispatch({ type: 'APPROVE_APPLICATION', payload: application.id });
+      } else if (type === 'REJECT') {
+          dispatch({ type: 'REJECT_APPLICATION', payload: application.id });
+      } else {
+          dispatch({ type: 'REQUEST_INFO_APPLICATION', payload: application.id });
+      }
+      onClose();
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in">
@@ -69,10 +84,26 @@ const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({ applica
             </div>
         </div>
 
-        <div className="mt-8 text-right">
-            <button onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition">
-                Close
-            </button>
+        <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
+             <p className="text-sm text-gray-500">Current status: <span className="font-bold">{application.status}</span></p>
+             <div className="flex items-center gap-2">
+                 {application.status === 'Processing' && (
+                    <>
+                        <button onClick={() => handleAction('APPROVE')} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm">
+                            <CheckCircleIcon className="w-4 h-4" /> Approve
+                        </button>
+                        <button onClick={() => handleAction('REQUEST_INFO')} className="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2 text-sm">
+                           <HourglassIcon className="w-4 h-4" /> Request Info
+                        </button>
+                        <button onClick={() => handleAction('REJECT')} className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center gap-2 text-sm">
+                            <XCircleIcon className="w-4 h-4" /> Reject
+                        </button>
+                    </>
+                 )}
+                 <button onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition text-sm">
+                    Close
+                </button>
+             </div>
         </div>
       </div>
     </div>

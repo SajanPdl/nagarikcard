@@ -1,6 +1,6 @@
 import React from 'react';
 import { Application, Service, Office } from '../types';
-import { CheckCircleIcon, HourglassIcon, FileCheckIcon, CreditCardIcon } from './icons';
+import { CheckCircleIcon, HourglassIcon, FileCheckIcon, CreditCardIcon, AlertTriangleIcon } from './icons';
 
 interface ApplicationTrackerProps {
   application: Application;
@@ -23,7 +23,9 @@ const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({ application, se
   const office = offices.find(o => o.id === application.officeId);
 
   const statuses = ['Pending Payment', 'Submitted', 'Processing', 'Approved'];
-  const currentStatusIndex = statuses.indexOf(application.status);
+  const currentStatusIndex = application.status === 'More Info Requested' || application.status === 'Rejected' 
+    ? statuses.indexOf('Processing') // Show progress up to processing if on hold
+    : statuses.indexOf(application.status);
 
   return (
     <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
@@ -35,7 +37,8 @@ const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({ application, se
         </div>
         <span className={`mt-2 sm:mt-0 px-3 py-1 text-xs font-bold rounded-full self-start ${
             application.status === 'Approved' ? 'bg-green-100 text-green-800' : 
-            application.status === 'Pending Payment' ? 'bg-yellow-100 text-yellow-800' : 
+            application.status === 'Pending Payment' ? 'bg-yellow-100 text-yellow-800' :
+            application.status === 'Rejected' ? 'bg-red-100 text-red-800' :
             'bg-blue-100 text-blue-800'
         }`}>
           {application.status}
@@ -46,6 +49,13 @@ const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({ application, se
           <div className="mt-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-md">
               <p className="font-bold">You are being called to a counter now!</p>
           </div>
+      )}
+
+      {application.predictedDelay && (
+        <div className="mt-3 flex items-center space-x-2 text-sm text-yellow-700 bg-yellow-50 p-3 rounded-md">
+            <AlertTriangleIcon className="w-5 h-5 text-yellow-500 shrink-0" /> 
+            <span>Predicted Delay: <strong>{application.predictedDelay}</strong></span>
+        </div>
       )}
 
       {application.status === 'Pending Payment' && onPay && (

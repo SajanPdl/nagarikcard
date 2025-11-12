@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Profile, WalletDocument, Service, Application, Office } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon } from '../components/icons';
+import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
@@ -61,33 +61,29 @@ const Dashboard: React.FC<{
             {/* Digital ID Card */}
             <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-2xl max-w-2xl mx-auto">
                 <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                            <IdCardIcon className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                             <p className="text-2xl font-bold">{privacyMode ? getShortName(profile.name) : profile.name}</p>
-                             <div 
-                                 className="flex items-center space-x-2 mt-1 cursor-pointer"
-                                 onClick={() => onNavigate('wallet')}
-                             >
-                                {citizenStatus.icon}
-                                <span className={`text-sm font-medium ${citizenStatus.color}`}>{citizenStatus.text} Citizenship</span>
-                             </div>
-                        </div>
+                    <div>
+                        <p className="text-sm opacity-80">GovFlow Digital ID</p>
+                        <p className="text-2xl font-bold mt-1">{privacyMode ? getShortName(profile.name) : profile.name}</p>
                     </div>
-                     <div className="flex flex-col items-end space-y-2">
-                        <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
                             <span className="text-xs font-medium">{privacyMode ? 'Show' : 'Hide'}</span>
                             <button onClick={() => setPrivacyMode(!privacyMode)} className={`w-10 h-5 flex items-center rounded-full transition-colors ${privacyMode ? 'bg-white/30' : 'bg-black/20'}`}>
                                 <span className={`w-4 h-4 bg-white rounded-full transform transition-transform ${privacyMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
                             </button>
-                        </div>
-                        <button onClick={onShowQr} className="mt-2 text-sm bg-white/20 hover:bg-white/30 font-semibold py-1 px-3 rounded-lg flex items-center space-x-1.5">
-                            <QrCodeIcon className="w-4 h-4"/>
-                            <span>Show QR</span>
-                        </button>
-                     </div>
+                    </div>
+                </div>
+                <div className="mt-6 flex justify-between items-end">
+                    <div 
+                        className="flex items-center space-x-2 mt-1 cursor-pointer group"
+                        onClick={() => onNavigate('wallet')}
+                    >
+                        {citizenStatus.icon}
+                        <span className={`text-sm font-medium ${citizenStatus.color} group-hover:underline`}>{citizenStatus.text} Citizenship</span>
+                    </div>
+                    <button onClick={onShowQr} className="text-sm bg-white/20 hover:bg-white/30 font-semibold py-1.5 px-4 rounded-lg flex items-center space-x-1.5">
+                        <QrCodeIcon className="w-4 h-4"/>
+                        <span>Show QR ID</span>
+                    </button>
                 </div>
             </div>
 
@@ -95,7 +91,7 @@ const Dashboard: React.FC<{
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
                 <QuickAction icon={<BriefcaseIcon />} label="Apply for Service" onClick={() => onNavigate('service-catalog')} />
                 <QuickAction icon={<HourglassIcon />} label="Track Applications" onClick={() => onNavigate('my-applications')} />
-                <QuickAction icon={<MapPinIcon />} label="Book Visit/Token" onClick={() => alert("Coming soon!")}/>
+                <QuickAction icon={<BookOpenIcon />} label="Help & FAQ" onClick={() => onNavigate('help')} />
                 <QuickAction icon={<WalletIcon />} label="Digital Documents" onClick={() => onNavigate('wallet')} />
             </div>
 
@@ -190,7 +186,7 @@ const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: 
 
     return (
         <div className="max-w-md mx-auto text-center">
-            <h2 className="text-2xl font-bold mb-2">Welcome to Nagarik Card</h2>
+            <h2 className="text-2xl font-bold mb-2">Welcome to GovFlow</h2>
             <p className="text-gray-600 mb-6">To get started, please upload your Citizenship document.</p>
             <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl">
                 <input type="file" id="doc-upload" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" />
@@ -201,7 +197,7 @@ const Onboarding: React.FC<{ onComplete: (doc: WalletDocument) => void, userId: 
                 {hash && <p className="text-xs font-mono mt-2 break-all text-gray-500">{hash}</p>}
             </div>
             {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
-            <button onClick={handleSubmit} disabled={!file || uploading} className="mt-6 w-full bg-[#C51E3A] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400">
+            <button onClick={handleSubmit} disabled={!file || uploading} className="mt-6 w-full bg-[#C8102E] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400">
                 {uploading ? 'Uploading...' : 'Complete Setup'}
             </button>
         </div>
@@ -289,7 +285,7 @@ const ApplicationPage: React.FC<{ service: Service, profile: Profile, onSubmit: 
                 <p className="text-3xl font-bold text-gray-800">{new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR' }).format(service.fee)}</p>
             </div>
 
-            <button onClick={handleSubmit} className="mt-6 w-full bg-[#C51E3A] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition flex items-center justify-center space-x-2">
+            <button onClick={handleSubmit} className="mt-6 w-full bg-[#C8102E] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition flex items-center justify-center space-x-2">
                 <CreditCardIcon className="w-5 h-5" />
                 <span>Submit & Proceed to Payment</span>
             </button>
@@ -312,8 +308,59 @@ const MyApplicationsPage: React.FC<{ applications: Application[], services: Serv
     </div>
 );
 
+const HelpPage: React.FC<{ services: Service[] }> = ({ services }) => {
+    const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'wallet';
+    const faqs = [
+        { q: "What is GovFlow?", a: "GovFlow is a digital platform designed to make it easy for citizens to access government services online. You can apply for services, track your application status, and manage your official documents in one secure place." },
+        { q: "How do I start an application?", a: "From the dashboard, click 'Apply for Service' to see the service catalog. Choose the service you need and click 'Start'. The system will guide you through the process, using documents from your digital wallet to auto-fill forms." },
+        { q: "What does 'document verification' mean?", a: "When you upload a document to your digital wallet, it is sent to the relevant government authority for verification. Once verified, you can use it for any service without needing to re-submit it. This process ensures your documents are authentic and secure." },
+        { q: "How long does it take for my application to be approved?", a: "Processing times vary by service. Each service in the catalog provides an estimated time. You can track the real-time status of your application on the 'My Applications' page." },
+    ];
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-6">Help & Information</h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <h3 className="text-xl font-bold mb-4">Frequently Asked Questions (FAQ)</h3>
+                    <div className="space-y-3">
+                        {faqs.map((faq, index) => (
+                            <div key={index} className="border rounded-lg">
+                                <button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-gray-50">
+                                    <span>{faq.q}</span>
+                                    <span className={`transform transition-transform text-xl ${openFaq === index ? 'rotate-180' : ''}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                                    </span>
+                                </button>
+                                {openFaq === index && (
+                                    <div className="p-4 border-t bg-gray-50 text-gray-700">
+                                        <p>{faq.a}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold mb-4">Service Directory</h3>
+                    <div className="space-y-4 bg-white p-4 rounded-lg shadow-md max-h-96 overflow-y-auto">
+                        {services.map(service => (
+                            <div key={service.id} className="border-b pb-2 last:border-b-0">
+                                <p className="font-semibold text-gray-800">{service.name}</p>
+                                <p className="text-sm text-gray-600">{service.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'wallet' | 'help';
 
 const CitizenPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
@@ -394,6 +441,8 @@ const CitizenPortal: React.FC = () => {
                 return <MyApplicationsPage applications={applications.filter(a => a.userId === profile.id)} services={services} offices={state.services.flatMap(s => s.offices || [])} onPay={setAppForPayment} />;
             case 'wallet':
                 return <DigitalWalletPage wallet={wallet} onAddDocument={() => setIsUploadModalOpen(true)} />;
+            case 'help':
+                return <HelpPage services={services} />;
             case 'dashboard':
             default:
                 return <Dashboard profile={profile} wallet={wallet} notifications={notifications} offices={services.flatMap(s => s.offices)} onNavigate={handleNavigate} onShowQr={() => setShowQr(true)} />;
@@ -407,11 +456,11 @@ const CitizenPortal: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div className="flex items-center space-x-3">
                     <NepalFlagIcon className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold text-gray-800">Nagarik Card Portal</h1>
+                    <h1 className="text-xl font-bold text-gray-800">GovFlow Portal</h1>
                 </div>
                 <div className='flex items-center gap-4'>
                      {page !== 'dashboard' && <button onClick={() => setPage('dashboard')} className="text-sm font-medium text-[#003893] hover:underline whitespace-nowrap">← Back to Dashboard</button>}
-                     <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
+                     <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
                 </div>
             </div>
             

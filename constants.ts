@@ -149,10 +149,11 @@ export const MOCK_APPLICATIONS: Application[] = [
             licenseNumber: '12-34-567890',
             expiryDate: '2024-09-30'
         },
+        predictedDelay: '+1 day due to high volume',
+        sentiment: 'neutral',
         statusHistory: [
             { status: 'Pending Payment', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 10000), hash: '0xabc1' },
-            { status: 'Payment Confirmed', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 5000), hash: '0xdef2' },
-            { status: 'Submitted', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), hash: '0xghi3' },
+            { status: 'Submitted', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 5000), hash: '0xdef2' },
             { status: 'Processing', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), hash: '0xjkl4' },
         ],
     },
@@ -169,10 +170,10 @@ export const MOCK_APPLICATIONS: Application[] = [
             ownerName: 'Maya Kumari Thapa',
             plotNumber: '102-KA-45'
         },
+        sentiment: 'positive',
         statusHistory: [
              { status: 'Pending Payment', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 - 10000), hash: '0xabc1' },
-            { status: 'Payment Confirmed', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 - 5000), hash: '0xdef2' },
-            { status: 'Submitted', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), hash: '0xghi3' },
+            { status: 'Submitted', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 - 5000), hash: '0xdef2' },
             { status: 'Processing', timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), hash: '0xjkl4' },
             { status: 'Approved', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), hash: '0x mno5' },
         ],

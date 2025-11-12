@@ -31,7 +31,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
         </div>
         <button 
           onClick={onSelect} 
-          className="bg-[#C51E3A] text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition"
+          className="bg-[#C8102E] text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition"
         >
           Start
         </button>

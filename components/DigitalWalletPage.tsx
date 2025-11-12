@@ -60,7 +60,7 @@ const DigitalWalletPage: React.FC<DigitalWalletPageProps> = ({ wallet, onAddDocu
             )}
             <button
                 onClick={onAddDocument}
-                className="fixed bottom-20 right-6 bg-[#C51E3A] text-white p-4 rounded-full shadow-lg hover:bg-red-700 transition transform hover:scale-110 z-40"
+                className="fixed bottom-20 right-6 bg-[#C8102E] text-white p-4 rounded-full shadow-lg hover:bg-red-700 transition transform hover:scale-110 z-40"
                 aria-label="Add New Document"
             >
                 <FilePlusIcon className="w-6 h-6" />

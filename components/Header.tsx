@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ showNav = false }) => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => dispatch({ type: 'SET_VIEW', payload: profile ? profile.role : 'landing' })}>
             <NepalFlagIcon className="h-8 w-auto" />
-            <h1 className="text-xl font-bold text-gray-800">Nagarik Card</h1>
+            <h1 className="text-xl font-bold text-gray-800">GovFlow</h1>
           </div>
           {showNav && (
             <>
@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ showNav = false }) => {
                  {user && profile ? (
                      <div className="flex items-center space-x-4">
                         <span className="text-sm font-medium text-gray-700">Welcome, {profile.name}</span>
-                        <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
+                        <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
                      </div>
                  ) : (
                     <>
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ showNav = false }) => {
              {user && profile ? (
                      <div className="flex flex-col space-y-2 border-t pt-4">
                         <span className="text-sm font-medium text-gray-700 px-3 py-2">Welcome, {profile.name}</span>
-                        <button onClick={() => { dispatch({ type: 'LOGOUT' }); setIsMenuOpen(false); }} className="text-base font-medium text-gray-600 hover:text-[#C51E3A] w-full text-left py-2 px-3 rounded-md hover:bg-gray-100">Logout</button>
+                        <button onClick={() => { dispatch({ type: 'LOGOUT' }); setIsMenuOpen(false); }} className="text-base font-medium text-gray-600 hover:text-[#C8102E] w-full text-left py-2 px-3 rounded-md hover:bg-gray-100">Logout</button>
                      </div>
                  ) : (
                     <div className="flex flex-col space-y-1">

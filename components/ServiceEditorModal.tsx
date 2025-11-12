@@ -66,7 +66,8 @@ const ServiceEditorModal: React.FC<ServiceEditorModalProps> = ({ serviceToEdit, 
     };
 
     const handleOfficeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+        // FIX: Explicitly type `option` as HTMLOptionElement to resolve type inference issue.
+        const selectedOptions = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value);
         const selectedOffices = MOCK_OFFICES.filter(office => selectedOptions.includes(office.id));
         setServiceData(prev => ({ ...prev, offices: selectedOffices }));
     };

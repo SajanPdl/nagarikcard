@@ -43,7 +43,10 @@ type Action =
   | { type: 'SET_ALL_CITIZEN_DATA'; payload: { profiles: Profile[], documents: WalletDocument[] } }
   | { type: 'UPDATE_PROFILE'; payload: Profile }
   | { type: 'VERIFY_DOCUMENT'; payload: { documentId: string } }
-  | { type: 'REJECT_DOCUMENT'; payload: { documentId: string } };
+  | { type: 'REJECT_DOCUMENT'; payload: { documentId: string } }
+  | { type: 'APPROVE_APPLICATION', payload: string }
+  | { type: 'REJECT_APPLICATION', payload: string }
+  | { type: 'REQUEST_INFO_APPLICATION', payload: string };
 
 const initialState: AppState = {
   view: 'landing',
@@ -57,6 +60,33 @@ const initialState: AppState = {
   allCitizenProfiles: [],
   allWalletDocuments: [],
 };
+
+const updateApplicationStatus = (
+    state: AppState,
+    appId: string,
+    newStatus: Application['status'],
+    notificationMessage: string,
+    notificationType: Notification['type'] = 'success'
+): AppState => {
+    const appToUpdate = state.applications.find(a => a.id === appId);
+    if (!appToUpdate) return state;
+
+    const updatedApp: Application = {
+        ...appToUpdate,
+        status: newStatus,
+        statusHistory: [
+            ...appToUpdate.statusHistory,
+            { status: newStatus, timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }
+        ]
+    };
+    
+    return {
+        ...state,
+        applications: state.applications.map(a => a.id === appId ? updatedApp : a),
+        notifications: [...state.notifications, { id: Date.now(), message: notificationMessage, type: notificationType }]
+    };
+};
+
 
 const appReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
@@ -248,6 +278,15 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 { id: Date.now(), message: `"${docName}" has been rejected.`, type: 'info' }
             ]
         };
+    }
+    case 'APPROVE_APPLICATION': {
+        return updateApplicationStatus(state, action.payload, 'Approved', 'Application has been approved.');
+    }
+    case 'REJECT_APPLICATION': {
+        return updateApplicationStatus(state, action.payload, 'Rejected', 'Application has been rejected.', 'info');
+    }
+    case 'REQUEST_INFO_APPLICATION': {
+        return updateApplicationStatus(state, action.payload, 'More Info Requested', 'Requested more information from citizen.', 'info');
     }
     default:
       return state;

@@ -2,9 +2,64 @@ import React, { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Header from '../components/Header';
 import { 
-    NepalFlagIcon, CheckCircleIcon, HourglassIcon, FileCheckIcon, UploadCloudIcon,
-    FileTextIcon, QrCodeIcon, WalletIcon, ShieldLockIcon, ZapIcon, UsersIcon, BuildingIcon, BriefcaseIcon
+    NepalFlagIcon, CheckCircleIcon, UploadCloudIcon,
+    FileTextIcon, QrCodeIcon, WalletIcon, ShieldLockIcon, ZapIcon, UsersIcon, BuildingIcon, BriefcaseIcon,
+    FilePlusIcon, SparklesIcon, ArrowRightIcon, BookOpenIcon
 } from '../components/icons';
+
+const WorkflowAnimation: React.FC = () => {
+    return (
+        <div className="relative w-full h-[450px] flex items-center justify-center">
+            <style>{`
+                @keyframes draw-path { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+                .path-animate { stroke-dasharray: 1000; animation: draw-path 3s ease-out 0.5s forwards; }
+
+                @keyframes pop-in { 
+                    0% { transform: scale(0.5); opacity: 0; }
+                    80% { transform: scale(1.1); opacity: 1; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+                .pop-in-1 { animation: pop-in 0.5s ease-out 0.2s forwards; opacity: 0; }
+                .pop-in-2 { animation: pop-in 0.5s ease-out 1.2s forwards; opacity: 0; }
+                .pop-in-3 { animation: pop-in 0.5s ease-out 2.2s forwards; opacity: 0; }
+                .pop-in-4 { animation: pop-in 0.5s ease-out 3.2s forwards; opacity: 0; }
+
+                @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,255,255,0.4)); } 50% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); } }
+                .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+            `}</style>
+            <svg viewBox="0 0 400 300" className="absolute w-full h-full">
+                <path d="M 50 150 C 125 50, 175 50, 250 150 S 325 250, 350 250" stroke="#003893" strokeWidth="2" fill="none" className="path-animate opacity-50" />
+            </svg>
+            <div className="relative w-full h-full flex justify-between items-center px-4">
+                <div className="absolute top-[120px] left-[20px] pop-in-1">
+                    <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                        <FilePlusIcon className="w-8 h-8"/>
+                        <span className="text-xs font-semibold mt-1">Submit</span>
+                    </div>
+                </div>
+                <div className="absolute top-[15px] left-[130px] pop-in-2">
+                     <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                        <SparklesIcon className="w-8 h-8"/>
+                        <span className="text-xs font-semibold mt-1">AI Triage</span>
+                    </div>
+                </div>
+                 <div className="absolute top-[120px] right-[100px] pop-in-3">
+                     <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-lg border border-white/20">
+                        <BriefcaseIcon className="w-8 h-8"/>
+                        <span className="text-xs font-semibold mt-1">GovOps</span>
+                    </div>
+                </div>
+                <div className="absolute top-[220px] right-[20px] pop-in-4">
+                     <div className="w-24 h-24 bg-green-500/80 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white text-center shadow-2xl border-2 border-white/50 pulse-glow">
+                        <CheckCircleIcon className="w-8 h-8"/>
+                        <span className="text-xs font-semibold mt-1">Approved</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const LandingPage: React.FC = () => {
     const { dispatch } = useContext(AppContext);
@@ -16,92 +71,76 @@ const LandingPage: React.FC = () => {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
              <style>{`
-                @keyframes float-1 { 0%, 100% { transform: translateY(0) rotate(6deg); } 50% { transform: translateY(-20px) rotate(4deg); } }
-                @keyframes float-2 { 0%, 100% { transform: translateY(0) rotate(-12deg); } 50% { transform: translateY(-20px) rotate(-10deg); } }
-                @keyframes float-3 { 0%, 100% { transform: translateY(0) rotate(12deg); } 50% { transform: translateY(-20px) rotate(10deg); } }
-                .animate-float-1 { animation: float-1 6s ease-in-out infinite; }
-                .animate-float-2 { animation: float-2 7s ease-in-out infinite; }
-                .animate-float-3 { animation: float-3 5s ease-in-out infinite; }
-                
                 @keyframes fadeIn-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-                .fade-in-up { animation: fadeIn-up 0.8s ease-out forwards; }
+                .fade-in-up { animation: fadeIn-up 0.8s ease-out forwards; opacity: 0; }
                 .fade-in-up-delay-1 { animation-delay: 0.2s; }
                 .fade-in-up-delay-2 { animation-delay: 0.4s; }
                 .fade-in-up-delay-3 { animation-delay: 0.6s; }
+
+                .hero-bg {
+                    background: linear-gradient(135deg, #003893 0%, #2a5298 100%);
+                }
             `}</style>
             <Header showNav={true} />
             <main className="flex-grow">
                 {/* Hero Section */}
-                <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-24 overflow-hidden">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        <div className="text-center lg:text-left">
-                            <h1 className="text-5xl lg:text-6xl font-extrabold text-gray-800 leading-tight fade-in-up">
-                                <span className="text-[#003893]">Nagarik Card:</span> <br/>
-                                <span className="text-[#C51E3A]">आफ्नो समय फिर्ता लिनुहोस्।</span>
-                            </h1>
-                            <p className="mt-6 text-lg text-gray-600 max-w-xl mx-auto lg:mx-0 fade-in-up fade-in-up-delay-1">
-                                Take back your time. The one wallet for all your government services. Secure, transparent, and seamless.
-                            </p>
-                            <button 
-                                onClick={handleGetStarted}
-                                className="mt-10 inline-block bg-[#C51E3A] text-white font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105 fade-in-up fade-in-up-delay-2"
-                            >
-                                Get Started / थालनी गर्नुहोस्
-                            </button>
-                        </div>
-                        <div className="relative h-[550px] sm:h-[600px] flex items-center justify-center fade-in-up fade-in-up-delay-3">
-                            <div className="absolute z-10 top-10 -right-4 sm:-right-16 w-52 sm:w-60 bg-white p-4 rounded-2xl shadow-xl animate-float-1">
-                                <h3 className="font-bold text-[#003893]">Dynamic QR ID</h3>
-                                <div className="mt-2 w-full h-28 sm:h-32 bg-gray-200 flex items-center justify-center rounded-lg">
-                                   <QrCodeIcon className="w-16 h-16 text-gray-400"/>
+                <section className="hero-bg text-white">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-24 overflow-hidden">
+                        <div className="grid lg:grid-cols-2 gap-16 items-center">
+                            <div className="text-center lg:text-left">
+                                <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight fade-in-up">
+                                    <span className="text-white/80">GovFlow:</span> <br/>
+                                    <span className="text-white">सरकारी सेवा, अब तपाईंको हातमा।</span>
+                                </h1>
+                                <p className="mt-6 text-lg text-white/80 max-w-xl mx-auto lg:mx-0 fade-in-up fade-in-up-delay-1">
+                                    The future of citizen services is here. One seamless platform for all your government needs. Secure, transparent, and built for you.
+                                </p>
+                                <div className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 fade-in-up fade-in-up-delay-2">
+                                    <button 
+                                        onClick={handleGetStarted}
+                                        className="inline-flex items-center gap-2 bg-[#C8102E] text-white font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105"
+                                    >
+                                        <span>Explore Services</span>
+                                        <ArrowRightIcon className="w-5 h-5" />
+                                    </button>
+                                     <button 
+                                        onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                                        className="inline-flex items-center bg-transparent border-2 border-white/80 text-white font-bold py-4 px-10 rounded-lg hover:bg-white/10 transition-colors"
+                                    >
+                                        Learn More
+                                    </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">Secure & time-sensitive for verification.</p>
                             </div>
-                            <div className="absolute z-30 bottom-8 -left-4 sm:-left-20 w-56 sm:w-64 bg-white p-4 rounded-2xl shadow-xl animate-float-2">
-                                <h3 className="font-bold text-[#003893]">Auto-Filled Form</h3>
-                                <FileCheckIcon className="w-8 h-8 text-green-500 my-2" />
-                                <p className="text-xs text-gray-500 mt-1">Data from your wallet auto-fills forms, saving you time and effort.</p>
-                            </div>
-                            <div className="absolute z-10 bottom-24 -right-8 sm:-right-24 w-52 sm:w-60 bg-white p-4 rounded-2xl shadow-xl animate-float-3">
-                                 <h3 className="font-bold text-[#003893]">Application Tracker</h3>
-                                 <HourglassIcon className="w-8 h-8 text-yellow-500 my-2" />
-                                 <p className="text-xs text-gray-500 mt-1">Live status updates from "Submitted" to "Approved".</p>
-                            </div>
-                            <div className="relative z-20 w-72 h-[580px] bg-gray-800 rounded-[40px] shadow-2xl border-4 border-gray-700 p-2">
-                                <div className="w-full h-full bg-gray-50 rounded-[32px] overflow-hidden p-4 flex flex-col">
-                                    <div className="flex justify-between items-center"><NepalFlagIcon className="h-6" /><div className="w-16 h-3 bg-gray-300 rounded-full"></div></div>
-                                    <h2 className="text-lg font-bold mt-4">My Wallet</h2>
-                                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-[#003893] to-blue-800 text-white shadow-lg"><p className="text-sm font-medium">Maya K.</p><p className="text-xs opacity-80 mt-1">Nagarik Card</p><div className="flex items-center justify-between mt-4"><span className="text-xs font-mono">**** **** 1234</span><div className="flex items-center space-x-1 bg-green-500/20 text-green-300 text-xs px-2 py-0.5 rounded-full"><CheckCircleIcon className="w-3 h-3"/><span>Verified</span></div></div></div>
-                                    <div className="mt-4 space-y-2"><div className="bg-white p-3 rounded-lg shadow-sm"><p className="font-semibold text-sm">Citizenship</p></div><div className="bg-white p-3 rounded-lg shadow-sm"><p className="font-semibold text-sm">Driving License</p></div></div>
-                                </div>
+                            <div className="fade-in-up fade-in-up-delay-3">
+                                <WorkflowAnimation />
                             </div>
                         </div>
                     </div>
                 </section>
 
                 {/* How It Works Section */}
-                <section className="py-20 lg:py-24 bg-white">
+                <section id="how-it-works" className="py-20 lg:py-24 bg-white">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-800">A Simpler Way Forward</h2>
                         <p className="mt-2 text-lg text-gray-600">कसरी काम गर्छ?</p>
                         <div className="mt-12 grid md:grid-cols-3 gap-8 lg:gap-12">
                             <div className="flex flex-col items-center group">
                                 <div className="bg-blue-100 text-[#003893] w-20 h-20 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"><UploadCloudIcon className="w-10 h-10" /></div>
-                                <h3 className="mt-6 text-xl font-bold">1. Securely Onboard</h3>
-                                <p className="mt-2 text-gray-600">Upload your citizenship once. We verify it and create your secure digital identity.</p>
-                                <p className="text-sm text-gray-500 mt-1">सुरक्षित रूपमा दर्ता गर्नुहोस्</p>
+                                <h3 className="mt-6 text-xl font-bold">1. Build Your Profile</h3>
+                                <p className="mt-2 text-gray-600">Securely upload your documents once to create your verified digital identity wallet.</p>
+                                <p className="text-sm text-gray-500 mt-1">आफ्नो प्रोफाइल बनाउनुहोस्</p>
                             </div>
                             <div className="flex flex-col items-center group">
-                                <div className="bg-red-100 text-[#C51E3A] w-20 h-20 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"><FileTextIcon className="w-10 h-10" /></div>
-                                <h3 className="mt-6 text-xl font-bold">2. Access Services</h3>
-                                <p className="mt-2 text-gray-600">Apply for services with auto-filled forms. No more repetitive data entry.</p>
+                                <div className="bg-red-100 text-[#C8102E] w-20 h-20 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"><FileTextIcon className="w-10 h-10" /></div>
+                                <h3 className="mt-6 text-xl font-bold">2. Apply in Seconds</h3>
+                                <p className="mt-2 text-gray-600">Select any service and apply instantly with auto-filled forms from your wallet.</p>
                                 <p className="text-sm text-gray-500 mt-1">सेवाहरू तुरुन्तै प्राप्त गर्नुहोस्</p>
                             </div>
                             <div className="flex flex-col items-center group">
                                 <div className="bg-green-100 text-green-700 w-20 h-20 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"><QrCodeIcon className="w-10 h-10" /></div>
-                                <h3 className="mt-6 text-xl font-bold">3. Verify with a Tap</h3>
-                                <p className="mt-2 text-gray-600">Use your dynamic QR ID at government offices for quick and secure verification.</p>
-                                <p className="text-sm text-gray-500 mt-1">एक ट्यापमा प्रमाणित गर्नुहोस्</p>
+                                <h3 className="mt-6 text-xl font-bold">3. Track & Verify</h3>
+                                <p className="mt-2 text-gray-600">Follow your application's progress in real-time and use your QR ID for in-person verification.</p>
+                                <p className="text-sm text-gray-500 mt-1">ट्र्याक र प्रमाणित गर्नुहोस्</p>
                             </div>
                         </div>
                     </div>
@@ -116,14 +155,48 @@ const LandingPage: React.FC = () => {
                         </div>
                         <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                             <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"><div className="flex items-center space-x-4"><div className="bg-blue-100 text-[#003893] p-3 rounded-lg"><WalletIcon className="w-6 h-6"/></div><h3 className="text-lg font-bold">Digital Wallet</h3></div><p className="mt-4 text-gray-600">Your documents, verified and secure in one place. Access them anytime, anywhere.</p></div>
-                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"><div className="flex items-center space-x-4"><div className="bg-red-100 text-[#C51E3A] p-3 rounded-lg"><ShieldLockIcon className="w-6 h-6"/></div><h3 className="text-lg font-bold">Bank-Grade Security</h3></div><p className="mt-4 text-gray-600">Your data is protected with end-to-end encryption and the highest security standards.</p></div>
+                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"><div className="flex items-center space-x-4"><div className="bg-red-100 text-[#C8102E] p-3 rounded-lg"><ShieldLockIcon className="w-6 h-6"/></div><h3 className="text-lg font-bold">Bank-Grade Security</h3></div><p className="mt-4 text-gray-600">Your data is protected with end-to-end encryption and the highest security standards.</p></div>
                             <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"><div className="flex items-center space-x-4"><div className="bg-yellow-100 text-yellow-700 p-3 rounded-lg"><ZapIcon className="w-6 h-6"/></div><h3 className="text-lg font-bold">Time Saving</h3></div><p className="mt-4 text-gray-600">Skip the queues and paperwork. Get things done from the comfort of your home.</p></div>
                         </div>
                     </div>
                 </section>
 
-                {/* For Everyone Section */}
+                {/* About GovFlow Section */}
                 <section className="py-20 lg:py-24 bg-white">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center">
+                            <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-800">About GovFlow</h2>
+                            <p className="mt-2 text-lg text-gray-600">हाम्रोबारे</p>
+                        </div>
+                        <div className="mt-16 max-w-4xl mx-auto grid md:grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                            <div>
+                                <div className="flex items-center mb-4">
+                                    <div className="bg-blue-100 text-[#003893] p-3 rounded-lg mr-4">
+                                        <BookOpenIcon className="w-6 h-6"/>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-800">Our Mission</h3>
+                                </div>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Our mission is to bridge the gap between citizens and government by creating a simple, transparent, and efficient digital ecosystem. We believe that by leveraging technology, we can eliminate bureaucracy, reduce wait times, and empower every citizen with direct access to the services they need and deserve.
+                                </p>
+                            </div>
+                            <div>
+                                 <div className="flex items-center mb-4">
+                                    <div className="bg-red-100 text-[#C8102E] p-3 rounded-lg mr-4">
+                                        <SparklesIcon className="w-6 h-6"/>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-800">Why GovFlow?</h3>
+                                </div>
+                                 <p className="text-gray-600 leading-relaxed">
+                                    GovFlow is more than just a platform; it's a commitment to progress. For citizens, it means less time spent in queues and more time for what matters. For the government, it means streamlined workflows and data-driven insights. For Nepal, it signifies a leap towards a modern, digital-first future where governance is accessible, accountable, and designed for everyone.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* For Everyone Section */}
+                <section className="py-20 lg:py-24">
                      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-800">For Everyone</h2>
                         <p className="mt-2 text-lg text-gray-600">सबैका लागि</p>
@@ -134,7 +207,7 @@ const LandingPage: React.FC = () => {
                                 <p className="mt-2 text-gray-600">Easy access to services, less waiting time, and complete control over your personal data.</p>
                             </div>
                             <div className="border border-gray-200 p-6 rounded-lg hover:border-red-300 hover:shadow-sm">
-                                <BuildingIcon className="w-10 h-10 text-[#C51E3A] mb-4"/>
+                                <BuildingIcon className="w-10 h-10 text-[#C8102E] mb-4"/>
                                 <h3 className="text-xl font-bold">Government / सरकार</h3>
                                 <p className="mt-2 text-gray-600">Streamlined processes, reduced paperwork, and more efficient, transparent service delivery.</p>
                             </div>
@@ -151,10 +224,10 @@ const LandingPage: React.FC = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center">
                     <div className="flex items-center space-x-3">
                         <NepalFlagIcon className="h-6 w-auto" />
-                        <span className="font-bold">Nagarik Card</span>
+                        <span className="font-bold">GovFlow</span>
                     </div>
                     <div className="text-sm text-gray-400 mt-4 sm:mt-0">
-                        © {new Date().getFullYear()} Nagarik Card Initiative. All Rights Reserved.
+                        © {new Date().getFullYear()} GovFlow Initiative. All Rights Reserved.
                     </div>
                 </div>
             </footer>

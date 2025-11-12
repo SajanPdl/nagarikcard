@@ -65,7 +65,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ intendedView }) => {
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">
                 <div className="flex justify-center items-center space-x-3 mb-4">
                     <NepalFlagIcon className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold text-gray-800">Nagarik Card</h1>
+                    <h1 className="text-xl font-bold text-gray-800">GovFlow</h1>
                 </div>
                 <h2 className="text-2xl font-bold text-center text-gray-700 mb-2">
                     {getTitle()}
@@ -140,7 +140,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ intendedView }) => {
 
                     <button
                         type="submit"
-                        className="w-full bg-[#C51E3A] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-red-700 transition"
+                        className="w-full bg-[#C8102E] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-red-700 transition"
                     >
                         {mode === 'login' && 'Log In'}
                         {mode === 'signup' && 'Sign Up'}

@@ -54,7 +54,7 @@ export interface Application {
   serviceId: string;
   userId: string;
   submittedAt: Date;
-  status: 'Pending Payment' | 'Submitted' | 'Processing' | 'Approved' | 'Called';
+  status: 'Pending Payment' | 'Submitted' | 'Processing' | 'Approved' | 'Called' | 'More Info Requested' | 'Rejected';
   paymentStatus: 'Paid' | 'Unpaid';
   statusHistory: {
     status: string;
@@ -64,4 +64,6 @@ export interface Application {
   token?: string;
   officeId?: string;
   formData: Record<string, any>;
+  predictedDelay?: string; // e.g., "+2 days"
+  sentiment?: 'positive' | 'neutral' | 'negative';
 }

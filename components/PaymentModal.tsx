@@ -72,7 +72,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ application, service, onPay
             <div className="mt-8">
                 <button 
                     onClick={handlePayment} 
-                    className="w-full bg-[#C51E3A] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition"
+                    className="w-full bg-[#C8102E] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition"
                 >
                     Simulate Successful Payment
                 </button>

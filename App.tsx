@@ -16,7 +16,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <NepalFlagIcon className="h-16 w-auto animate-pulse" />
-        <p className="mt-4 text-gray-600">Initializing Nagarik Card...</p>
+        <p className="mt-4 text-gray-600">Initializing GovFlow...</p>
       </div>
     );
   }

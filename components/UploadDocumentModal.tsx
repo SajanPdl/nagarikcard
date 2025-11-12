@@ -112,7 +112,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ userId, onClo
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition">
                             Cancel
                         </button>
-                        <button type="submit" disabled={isLoading} className="bg-[#C51E3A] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400">
+                        <button type="submit" disabled={isLoading} className="bg-[#C8102E] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400">
                             {isLoading ? 'Uploading...' : 'Add to Wallet'}
                         </button>
                     </div>
