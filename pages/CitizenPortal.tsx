@@ -1,9 +1,10 @@
 
 
+
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Profile, WalletDocument, Service, Application, Office } from '../types';
-import { CheckCircleIcon, NepalFlagIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SathiAiIcon, QrCodeIcon, BriefcaseIcon, HourglassIcon, WalletIcon, BellIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, SparklesIcon, ArrowRightIcon, UserIcon, MessageSquareIcon, ZapIcon } from '../components/icons';
+import { Profile, WalletDocument, Service, Application, Office, CitizenPage } from '../types';
+import { CheckCircleIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SparklesIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, UserIcon, MessageSquareIcon, ZapIcon, WalletIcon, BellIcon, BriefcaseIcon } from '../components/icons';
 import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
@@ -55,7 +56,7 @@ const NepalMap: React.FC = () => {
             `}</style>
             <svg width="100%" height="100%" viewBox="0 0 1002 558" preserveAspectRatio="xMidYMid meet">
                 <path
-                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
+                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
                     fill="#e2e8f0"
                     stroke="#a0aec0"
                     strokeWidth="1"
@@ -195,8 +196,8 @@ const Dashboard: React.FC<{
                 {/* Right Column */}
                 <div className="lg:col-span-1 space-y-8">
                      <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-xl text-center cursor-pointer hover:shadow-2xl transition-shadow" onClick={onOpenAi}>
-                        <SathiAiIcon className="w-10 h-10 mx-auto mb-3" />
-                        <h3 className="font-bold text-lg">NepalSeva.AI Assistant</h3>
+                        <SparklesIcon className="w-10 h-10 mx-auto mb-3" />
+                        <h3 className="font-bold text-lg">Sathi.AI Assistant</h3>
                         <p className="text-sm opacity-80 mt-1">Ask me anything about services.</p>
                     </div>
 
@@ -396,11 +397,6 @@ const MyApplicationsPage: React.FC<{ applications: Application[], services: Serv
     </div>
 );
 
-const DummyComponentWithError: React.FC = () => {
-    console.log("This component had an error because it didn't return anything.");
-    return null;
-};
-
 const HelpPage: React.FC<{ services: Service[] }> = ({ services }) => {
     const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -590,12 +586,9 @@ const ProfileSettingsPage: React.FC<{ profile: Profile, dispatch: React.Dispatch
     );
 };
 
-export type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact' | 'profile-settings';
-
 export const CitizenPortal: React.FC = () => {
   const { state, dispatch } = useContext(AppContext);
-  const { profile, wallet, applications, services, notifications } = state;
-  const [page, setPage] = useState<CitizenPage>('dashboard');
+  const { profile, wallet, applications, services, notifications, citizenPage } = state;
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [appToPay, setAppToPay] = useState<Application | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -603,22 +596,20 @@ export const CitizenPortal: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
-    if (profile && wallet.length === 0 && page !== 'onboarding') {
-      if (page !== 'dashboard') {
-          setPage('onboarding');
-      }
-    } else if (profile && wallet.length > 0 && page === 'onboarding') {
-      setPage('dashboard');
+    if (profile && wallet.length === 0 && citizenPage !== 'onboarding') {
+        dispatch({ type: 'SET_CITIZEN_PAGE', payload: 'onboarding' });
+    } else if (profile && wallet.length > 0 && citizenPage === 'onboarding') {
+        dispatch({ type: 'SET_CITIZEN_PAGE', payload: 'dashboard' });
     }
-  }, [wallet, profile, page]);
+  }, [wallet, profile, citizenPage, dispatch]);
 
   const handleNavigate = (newPage: CitizenPage) => {
-    setPage(newPage);
+    dispatch({ type: 'SET_CITIZEN_PAGE', payload: newPage });
   };
 
   const handleSelectService = (service: Service) => {
     setSelectedService(service);
-    setPage('application');
+    handleNavigate('application');
   };
   
   const handleQuickApply = (serviceCode: string) => {
@@ -664,14 +655,14 @@ export const CitizenPortal: React.FC = () => {
     }, 2000);
 
     setAppToPay(null);
-    setPage('my-applications');
+    handleNavigate('my-applications');
     dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'Payment successful! Application submitted.', type: 'success' } });
   };
   
   const handleOnboardingComplete = (doc: WalletDocument) => {
       dispatch({ type: 'UPSERT_WALLET_DOCUMENT', payload: doc });
       dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'Citizenship document uploaded for verification.', type: 'success' } });
-      setPage('dashboard');
+      handleNavigate('dashboard');
   }
 
   const handleUploadDocument = (doc: WalletDocument) => {
@@ -683,30 +674,12 @@ export const CitizenPortal: React.FC = () => {
     return <div>Loading citizen profile...</div>;
   }
   
-   const SideNavLink: React.FC<{
-      pageName: CitizenPage;
-      label: string;
-      icon: React.ElementType;
-    }> = ({ pageName, label, icon: Icon }) => (
-      <button
-        onClick={() => setPage(pageName)}
-        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-          page === pageName
-            ? 'bg-[#003893] text-white'
-            : 'text-gray-600 hover:bg-gray-200'
-        }`}
-      >
-        <Icon className="w-5 h-5" />
-        <span>{label}</span>
-      </button>
-  );
-
   const renderPage = () => {
-    if (wallet.length === 0 && page !== 'onboarding') {
+    if (wallet.length === 0 && citizenPage !== 'onboarding') {
         return <Onboarding onComplete={handleOnboardingComplete} userId={profile.id} />
     }
     
-    switch (page) {
+    switch (citizenPage) {
       case 'onboarding':
         return <Onboarding onComplete={handleOnboardingComplete} userId={profile.id} />;
       case 'service-catalog':
@@ -748,39 +721,10 @@ export const CitizenPortal: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-        <header className="bg-white shadow-sm sticky top-0 z-40">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setPage('dashboard')}>
-                        <NepalFlagIcon className="h-8 w-auto" />
-                        <h1 className="text-xl font-bold text-gray-800">GovFlow Portal</h1>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                        <button onClick={() => setIsAiModalOpen(true)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100"><SathiAiIcon className="w-6 h-6"/></button>
-                        <button onClick={() => setIsQrModalOpen(true)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100"><QrCodeIcon className="w-6 h-6"/></button>
-                        <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-                <aside className="lg:col-span-1 bg-white p-4 rounded-xl shadow-md space-y-2 sticky top-24">
-                   <SideNavLink pageName="dashboard" label="Dashboard" icon={BriefcaseIcon} />
-                   <SideNavLink pageName="my-applications" label="My Applications" icon={BellIcon} />
-                   <SideNavLink pageName="service-catalog" label="Service Catalog" icon={BookOpenIcon} />
-                   <SideNavLink pageName="nagarik-wallet" label="Nagarik Wallet" icon={WalletIcon} />
-                   <SideNavLink pageName="community-impact" label="Community Impact" icon={TrendingUpIcon} />
-                   <div className="!mt-4 pt-4 border-t border-gray-100 space-y-2">
-                        <SideNavLink pageName="profile-settings" label="Profile Settings" icon={UserIcon} />
-                        <SideNavLink pageName="help" label="Help & Info" icon={MessageSquareIcon} />
-                   </div>
-                </aside>
-                <main className="lg:col-span-3">
-                     {renderPage()}
-                </main>
-            </div>
+            <main>
+                {renderPage()}
+            </main>
         </div>
 
         {isQrModalOpen && <QrCodeModal user={profile} onClose={() => setIsQrModalOpen(false)} />}

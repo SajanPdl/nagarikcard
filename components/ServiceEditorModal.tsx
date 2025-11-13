@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Service, FormSchema } from '../types';
 import { AppContext } from '../context/AppContext';
@@ -39,9 +40,6 @@ const ServiceEditorModal: React.FC<ServiceEditorModalProps> = ({ serviceToEdit, 
     useEffect(() => {
         if (serviceToEdit) {
             setServiceData(serviceToEdit);
-            // FIX: Replaced spread operator with explicit property assignments.
-            // This avoids potential type inference issues with `Object.entries` on indexed types,
-            // which was likely causing both reported compilation errors.
             const propsArray = Object.entries(serviceToEdit.formSchema.properties).map(([key, value]) => ({
                 key,
                 type: (value as any).type,
@@ -66,7 +64,6 @@ const ServiceEditorModal: React.FC<ServiceEditorModalProps> = ({ serviceToEdit, 
     };
 
     const handleOfficeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        // FIX: Explicitly type `option` as HTMLOptionElement to resolve type inference issue.
         const selectedOptions = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value);
         const selectedOffices = MOCK_OFFICES.filter(office => selectedOptions.includes(office.id));
         setServiceData(prev => ({ ...prev, offices: selectedOffices }));

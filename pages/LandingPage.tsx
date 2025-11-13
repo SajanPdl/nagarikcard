@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
-import Header from '../components/Header';
 import { 
     NepalFlagIcon, CheckCircleIcon, UploadCloudIcon,
     FileTextIcon, QrCodeIcon, WalletIcon, ShieldLockIcon, ZapIcon, UsersIcon, BuildingIcon, BriefcaseIcon,
@@ -151,7 +150,6 @@ const LandingPage: React.FC = () => {
                     100% { background-position: 0% 50%; }
                 }
             `}</style>
-            <Header showNav={true} />
             <main className="flex-grow">
                 {/* Hero Section */}
                 <section className="hero-bg text-white">

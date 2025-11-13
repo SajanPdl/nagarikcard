@@ -61,16 +61,16 @@ const SentimentDonut: React.FC<{ data: { positive: number, neutral: number, nega
     );
 }
 
-const NepalHeatmap: React.FC = () => (
+const KioskActivityMap: React.FC = () => (
     <div>
-        <h4 className="font-semibold text-gray-700 mb-4">Request Density Heatmap</h4>
+        <h4 className="font-semibold text-gray-700 mb-4">Live Kiosk Activity Map</h4>
         <div className="bg-gray-100 p-4 rounded-lg flex justify-center items-center aspect-video">
             <svg width="100%" height="100%" viewBox="0 0 846 228">
                 <path d="M845.3,212.4l-31.1-15.3l-7.7-25.1l-38.6-15.4l-14.3-29.6l-50.5-0.1l-22.1,14.4l-38.9-14.2l-67.4-45.6L509,114.3l-67.1-18.4l-26.6-27.1L355,47.3L298.6,28L268.9,15.2l-40.4-2.8l-32.9,1.1l-26,14.4L114,68.3L89.1,93.4l14.2,28.2l35.7,16.5l22.7,17.2l49.2,13l42.6,14.3l49,18.4l43.7,18.1l56.8,14.3l42.6,15.3l42.5,14.3l27.1,8.6l59.4,3.7l60.7-0.4l63.2-8Z" fill="#e0e0e0" stroke="#a0a0a0" strokeWidth="1"/>
-                <circle cx="490" cy="140" r="15" fill="red" opacity="0.6"><title>Kathmandu: 150 Requests</title></circle>
-                <circle cx="320" cy="120" r="10" fill="orange" opacity="0.6"><title>Pokhara: 80 Requests</title></circle>
-                <circle cx="730" cy="190" r="8" fill="yellow" opacity="0.6"><title>Biratnagar: 50 Requests</title></circle>
-                <circle cx="150" cy="130" r="7" fill="yellow" opacity="0.6"><title>Nepalgunj: 45 Requests</title></circle>
+                <circle cx="490" cy="140" r="15" fill="red" opacity="0.6"><title>Kathmandu Kiosk: 150 Requests</title></circle>
+                <circle cx="320" cy="120" r="10" fill="orange" opacity="0.6"><title>Pokhara Kiosk: 80 Requests</title></circle>
+                <circle cx="730" cy="190" r="8" fill="yellow" opacity="0.6"><title>Biratnagar Kiosk: 50 Requests</title></circle>
+                <circle cx="150" cy="130" r="7" fill="yellow" opacity="0.6"><title>Nepalgunj Kiosk: 45 Requests</title></circle>
             </svg>
         </div>
     </div>
@@ -134,7 +134,7 @@ const RealTimeVolumeChart: React.FC = () => {
     
     return (
         <div>
-            <h4 className="font-semibold text-gray-700 mb-4">Real-time Request Volume (Last 24 Hours)</h4>
+            <h4 className="font-semibold text-gray-700 mb-4">Real-time Request Volume (All Kiosks)</h4>
             <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} className="w-full h-auto">
                 <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -206,7 +206,7 @@ const AnalyticsPage: React.FC<{ applications: Application[], services: Service[]
                 <BarChart title="Total Request Volume By Service" data={serviceVolumeData} />
                 <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-gray-200">
                     <SentimentDonut data={sentimentData} />
-                    <NepalHeatmap />
+                    <KioskActivityMap />
                 </div>
             </div>
         </div>
@@ -334,14 +334,6 @@ const AdminPortal: React.FC = () => {
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex justify-between items-center mb-8">
-                <div className="flex items-center space-x-3">
-                    <NepalFlagIcon className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold text-gray-800">GovOps Dashboard</h1>
-                </div>
-                <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C8102E]">Logout</button>
-            </div>
-
             <main className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Center Content: Main Panels */}
                 <div className="lg:col-span-3">

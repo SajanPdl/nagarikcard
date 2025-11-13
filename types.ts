@@ -97,3 +97,5 @@ export interface Application {
   predictedDelay?: string; // e.g., "+2 days"
   sentiment?: 'positive' | 'neutral' | 'negative';
 }
+
+export type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact' | 'profile-settings';

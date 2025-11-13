@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { WalletDocument, DocumentType } from '../types';
 import { sha256 } from '../pages/CitizenPortal';
@@ -43,7 +44,6 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ userId, onClo
             const newDoc: WalletDocument = {
                 id: `doc-${Date.now()}`,
                 user_id: userId,
-                // FIX: Cast string docType to DocumentType to match the WalletDocument interface.
                 docType: docType as DocumentType,
                 fileName: file.name,
                 hash,

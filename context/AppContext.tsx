@@ -1,5 +1,5 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
-import { Profile, Application, WalletDocument, Service } from '../types';
+import { Profile, Application, WalletDocument, Service, CitizenPage } from '../types';
 import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -22,6 +22,7 @@ interface AppState {
   notifications: Notification[];
   allCitizenProfiles: Profile[];
   allWalletDocuments: WalletDocument[];
+  citizenPage: CitizenPage;
 }
 
 type Action =
@@ -46,7 +47,8 @@ type Action =
   | { type: 'REJECT_DOCUMENT'; payload: { documentId: string } }
   | { type: 'APPROVE_APPLICATION', payload: string }
   | { type: 'REJECT_APPLICATION', payload: string }
-  | { type: 'REQUEST_INFO_APPLICATION', payload: string };
+  | { type: 'REQUEST_INFO_APPLICATION', payload: string }
+  | { type: 'SET_CITIZEN_PAGE', payload: CitizenPage };
 
 const initialState: AppState = {
   view: 'landing',
@@ -59,6 +61,7 @@ const initialState: AppState = {
   notifications: [],
   allCitizenProfiles: [],
   allWalletDocuments: [],
+  citizenPage: 'dashboard',
 };
 
 const updateApplicationStatus = (
@@ -97,7 +100,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'SET_SESSION':
       return { ...state, user: action.payload.user, profile: action.payload.profile, view: action.payload.profile ? action.payload.profile.role : 'landing', isLoading: false };
     case 'LOGOUT':
-        return { ...initialState, isLoading: false, view: 'landing', services: state.services };
+        return { ...initialState, isLoading: false, view: 'landing', services: state.services, citizenPage: 'dashboard' };
     case 'LOGIN': {
         const { email, role } = action.payload;
         let profile: Profile | undefined;
@@ -112,6 +115,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 user: mockUser as any,
                 profile,
                 view: profile.role,
+                citizenPage: 'dashboard', // Reset to dashboard on login
                 notifications: [...state.notifications, { id: Date.now(), message: `Welcome back, ${profile.name}!`, type: 'success'}]
             };
         } else {
@@ -293,6 +297,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'REQUEST_INFO_APPLICATION': {
         return updateApplicationStatus(state, action.payload, 'More Info Requested', 'Requested more information from citizen.', 'info');
     }
+    case 'SET_CITIZEN_PAGE':
+        return { ...state, citizenPage: action.payload, view: 'citizen' };
     default:
       return state;
   }

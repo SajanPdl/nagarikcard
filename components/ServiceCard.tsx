@@ -1,3 +1,4 @@
+
 import React, { useContext } from 'react';
 import { Service, DocumentType } from '../types';
 import { AppContext } from '../context/AppContext';
@@ -10,7 +11,6 @@ interface ServiceCardProps {
 const ServiceCard: React.FC<ServiceCardProps> = ({ service, onSelect }) => {
     const { state } = useContext(AppContext);
     const userWalletDocs = state.wallet.map(d => d.docType) || [];
-    // FIX: Cast `doc` to DocumentType to satisfy the `includes` method's type requirement.
     const missingDocs = service.requiredDocs.filter(doc => !userWalletDocs.includes(doc as DocumentType));
     
   return (

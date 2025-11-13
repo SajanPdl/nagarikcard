@@ -1,178 +1,516 @@
-import React, { useState, useContext, useEffect } from 'react';
+
+
+
+
+
+
+import React, { useState, useContext, useEffect, useReducer, useRef } from 'react';
 import { AppContext } from '../context/AppContext';
-import { MOCK_APPLICATIONS, MOCK_CITIZEN_PROFILE } from '../constants';
-import { CheckCircleIcon, NepalFlagIcon, KeyIcon, XIcon } from '../components/icons';
+// FIX: Corrected typo MOCK_CITZEN_PROFILE to MOCK_CITIZEN_PROFILE.
+import { MOCK_CITIZEN_PROFILE, MOCK_APPLICATIONS } from '../constants';
+import { NepalFlagIcon, KioskAvatarIcon, CarIcon, LandPlotIcon, CreditCardIcon, HealthIcon, IdCardIcon, FileTextIcon, ArrowRightIcon, KeyIcon, CheckCircleIcon, PrinterIcon, PhoneIcon, BookOpenIcon, FingerprintIcon, QrCodeIcon, LogOutIcon, SathiAiIcon, BellIcon, BriefcaseIcon, UsersIcon } from '../components/icons';
+import { Service, Profile, Application } from '../types';
 
-const KioskPortal: React.FC = () => {
-    const { dispatch } = useContext(AppContext);
-    const [qrInput, setQrInput] = useState('');
-    const [scannedData, setScannedData] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [timeLeft, setTimeLeft] = useState<number | null>(null);
-    
-    // --- Mock QR Payloads ---
-    const VALIDITY_DURATION_SECONDS = 15;
-    const generateQrPayload = (expiryOffset: number, token: string, name: string, userId: string) => JSON.stringify({
-        userId: userId,
-        name: name,
-        token: token,
-        expiry: Date.now() + expiryOffset * 1000,
-    }, null, 2);
-    
-    const validApplication = MOCK_APPLICATIONS.find(app => app.status === 'Processing' && app.token);
-    const validCitizen = validApplication ? MOCK_CITIZEN_PROFILE : { name: 'Test User', id: 'test-id'};
-    
-    const MOCK_VALID_QR = generateQrPayload(VALIDITY_DURATION_SECONDS, validApplication?.token || 'TKN-DEMO', validCitizen.name, validCitizen.id);
-    const MOCK_EXPIRED_QR = generateQrPayload(-60, 'TKN-EXPIRED', 'Expired User', 'expired-id');
-    const MOCK_INVALID_QR = 'this-is-not-a-valid-json-string';
-    
+type KioskScreen = 'login' | 'dashboard' | 'service_categories' | 'service_list' | 'authenticate' | 'application' | 'payment' | 'receipt' | 'goodbye';
+type Language = 'en' | 'np';
 
-    useEffect(() => {
-        if (!scannedData || timeLeft === null) return;
+interface KioskState {
+    screen: KioskScreen;
+    language: Language;
+    currentUser: Profile | null;
+    selectedCategory: string | null;
+    selectedService: Service | null;
+    currentApplication: Application | null;
+    loading: boolean;
+}
 
-        if (timeLeft <= 0) {
-            setScannedData(null);
-            setError("Expired Code");
-            setTimeLeft(null);
-            return;
-        }
+type KioskAction =
+    | { type: 'SET_LANGUAGE'; payload: Language }
+    | { type: 'LOGIN'; payload: Profile }
+    | { type: 'LOGOUT' }
+    | { type: 'START_APPLICATION_FLOW' }
+    | { type: 'SELECT_CATEGORY'; payload: string }
+    | { type: 'SELECT_SERVICE'; payload: Service }
+    | { type: 'AUTHENTICATE'; payload: Profile } // Kept for inner flow auth if needed
+    | { type: 'SUBMIT_APPLICATION'; payload: Application }
+    | { type: 'COMPLETE_PAYMENT' }
+    | { type: 'FINISH_SESSION' }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'BACK_TO_DASHBOARD' }
+    | { type: 'BACK_TO_CATEGORIES' }
+    | { type: 'BACK_TO_SERVICE_LIST' }
+    | { type: 'RESET' };
 
-        const timerId = setInterval(() => {
-            setTimeLeft(prevTime => (prevTime ? prevTime - 1 : 0));
-        }, 1000);
+const initialState: KioskState = {
+    screen: 'login',
+    language: 'np',
+    currentUser: null,
+    selectedCategory: null,
+    selectedService: null,
+    currentApplication: null,
+    loading: false,
+};
 
-        return () => clearInterval(timerId);
-    }, [scannedData, timeLeft]);
-
-    const handleVerify = (code: string) => {
-        setError(null);
-        setScannedData(null);
-        setTimeLeft(null);
-
-        if (!code.trim()) {
-            setError("Input cannot be empty");
-            return;
-        }
-
-        try {
-            const payload = JSON.parse(code);
-
-            if (!payload.expiry || !payload.userId || !payload.token || !payload.name) {
-                 throw new Error("Invalid payload structure");
-            }
-
-            if (payload.expiry < Date.now()) {
-                throw new Error("Expired Code");
-            }
-            
-            const remainingValidity = Math.floor((payload.expiry - Date.now()) / 1000);
-
-            // Redact name for privacy
-            const nameParts = payload.name.split(' ');
-            const redactedName = `${nameParts[0].charAt(0)}. ${nameParts.length > 1 ? nameParts[nameParts.length-1] : ''}`;
-            
-            setScannedData({
-                name: redactedName,
-                token: payload.token,
-                status: 'VERIFIED'
-            });
-
-            setTimeLeft(remainingValidity);
-        } catch (e: any) {
-            if(e.message === "Expired Code") {
-                setError("Expired Code");
-            } else {
-                setError("Invalid Code");
-            }
-            setScannedData(null);
-        }
-    };
-
-    const handleTestCase = (testCase: string) => {
-        setQrInput(testCase);
-        handleVerify(testCase);
+function kioskReducer(state: KioskState, action: KioskAction): KioskState {
+    switch (action.type) {
+        case 'SET_LANGUAGE':
+            return { ...state, language: action.payload };
+        case 'LOGIN':
+            return { ...state, screen: 'dashboard', currentUser: action.payload, loading: false };
+        case 'LOGOUT':
+            return { ...state, screen: 'goodbye', currentUser: null };
+        case 'START_APPLICATION_FLOW':
+            return { ...state, screen: 'service_categories' };
+        case 'SELECT_CATEGORY':
+            return { ...state, screen: 'service_list', selectedCategory: action.payload };
+        case 'SELECT_SERVICE':
+            return { ...state, screen: 'application', selectedService: action.payload };
+        case 'AUTHENTICATE':
+            return { ...state, screen: 'application', currentUser: action.payload, loading: false };
+        case 'SUBMIT_APPLICATION':
+            return { ...state, screen: 'payment', currentApplication: action.payload };
+        case 'COMPLETE_PAYMENT':
+            return { ...state, screen: 'receipt', loading: false };
+        case 'FINISH_SESSION':
+            // FIX: Reset session-specific state when finishing a session to ensure a clean slate for the next interaction.
+            return { ...state, screen: 'dashboard', selectedCategory: null, selectedService: null, currentApplication: null }; // Go back to dashboard after a service
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'BACK_TO_DASHBOARD':
+             return { ...state, screen: 'dashboard', selectedService: null, selectedCategory: null, currentApplication: null };
+        case 'BACK_TO_CATEGORIES':
+            return { ...state, screen: 'service_categories', selectedCategory: null, selectedService: null };
+        case 'BACK_TO_SERVICE_LIST':
+            return { ...state, screen: 'service_list', selectedService: null };
+        case 'RESET':
+            return initialState;
+        default:
+            return state;
     }
+}
 
-    const handleReset = () => {
-        setScannedData(null);
-        setError(null);
-        setTimeLeft(null);
-        setQrInput('');
+const translations = {
+    en: {
+        welcomeTitle: "Welcome to GovFlow Kiosk",
+        welcomeSubtitle: "Digital governance at your fingertips. Please authenticate to begin.",
+        sathiWelcome: "Namaste! I am Sathi. Please log in using your Nagarik Card, Biometrics, or Citizenship number to access your personalized dashboard.",
+        dashboardTitle: "Welcome, ",
+        dashboardSubtitle: "This is your personal government service portal.",
+        sathiDashboard: "Welcome! From here you can apply for new services, check your application status, or manage your documents.",
+        servicesTitle: "Select a Service Category",
+        sathiServices: "Please choose the type of service you need. Just tap on one of the icons.",
+        serviceListTitle: "Choose a Service",
+        authTitle: "Identity Verification",
+        authSubtitle: "Please scan your Nagarik Card QR code to proceed.",
+        sathiAuth: "Great! Now, please verify your identity by scanning your Nagarik Card.",
+        appTitle: "Confirm Your Application",
+        sathiApp: "We've filled out the form for you using your verified details. Does this look correct?",
+        appConfirmButton: "Confirm & Proceed to Payment",
+        paymentTitle: "Complete Payment",
+        sathiPayment: "You're almost done! Please complete the payment to submit your application.",
+        paymentButton: "Simulate Payment",
+        receiptTitle: "Application Submitted Successfully!",
+        sathiReceipt: "Congratulations! Your application is submitted. Don't forget to take your receipt.",
+        printButton: "Print Receipt",
+        finishButton: "Back to Dashboard",
+        goodbyeTitle: "Thank you for using GovFlow!",
+        goodbyeSubtitle: "Session ended securely. Serving every citizen, everywhere.",
+        backButton: "Back",
+    },
+    np: {
+        welcomeTitle: "GovFlow किओस्कमा स्वागत छ",
+        welcomeSubtitle: "डिजिटल सुशासन तपाईंको औंलाको छेउमा। सुरु गर्न कृपया प्रमाणित गर्नुहोस्।",
+        sathiWelcome: "नमस्ते! म साथी हुँ। आफ्नो व्यक्तिगत ड्यासबोर्ड पहुँच गर्न कृपया आफ्नो नागरिक कार्ड, बायोमेट्रिक्स, वा नागरिकता नम्बर प्रयोग गरी लग इन गर्नुहोस्।",
+        dashboardTitle: "स्वागत छ, ",
+        dashboardSubtitle: "यो तपाईंको व्यक्तिगत सरकारी सेवा पोर्टल हो।",
+        sathiDashboard: "स्वागत छ! यहाँबाट तपाईं नयाँ सेवाहरूको लागि आवेदन दिन, आफ्नो आवेदनको स्थिति जाँच गर्न, वा आफ्नो कागजातहरू व्यवस्थापन गर्न सक्नुहुन्छ।",
+        servicesTitle: "सेवाको श्रेणी छान्नुहोस्",
+        sathiServices: "कृपया आवश्यक सेवाको प्रकार छान्नुहोस्। केवल कुनै एक आइकनमा ट्याप गर्नुहोस्।",
+        serviceListTitle: "एउटा सेवा छान्नुहोस्",
+        authTitle: "पहिचान प्रमाणीकरण",
+        authSubtitle: "अगाडि बढ्नको लागि कृपया आफ्नो नागरिक कार्डको QR कोड स्क्यान गर्नुहोस्।",
+        sathiAuth: "धेरै राम्रो! अब, कृपया आफ्नो नागरिक कार्ड स्क्यान गरेर आफ्नो पहिचान प्रमाणीकरण गर्नुहोस्।",
+        appTitle: "आवेदन पुष्टि गर्नुहोस्",
+        sathiApp: "हामीले तपाईंको प्रमाणित विवरणहरू प्रयोग गरेर फारम भरेका छौं। के यो सही देखिन्छ?",
+        appConfirmButton: "पुष्टि गर्नुहोस् र भुक्तानीमा जानुहोस्",
+        paymentTitle: "भुक्तानी पूरा गर्नुहोस्",
+        sathiPayment: "तपाईं लगभग सकिसक्नुभयो! कृपया आफ्नो आवेदन पेश गर्न भुक्तानी पूरा गर्नुहोस्।",
+        paymentButton: "भुक्तानी सिमुलेट गर्नुहोस्",
+        receiptTitle: "आवेदन सफलतापूर्वक पेश भयो!",
+        sathiReceipt: "बधाई छ! तपाईंको आवेदन पेश भएको छ। आफ्नो रसिद लिन नबिर्सनुहोस्।",
+        printButton: "रसिद प्रिन्ट गर्नुहोस्",
+        finishButton: "ड्यासबोर्डमा फर्कनुहोस्",
+        goodbyeTitle: "GovFlow प्रयोग गर्नुभएकोमा धन्यवाद!",
+        goodbyeSubtitle: "सत्र सुरक्षित रूपमा समाप्त भयो। प्रत्येक नागरिकको सेवामा, जताततै।",
+        backButton: "पछाडि",
     }
-    
-    const formatTime = (seconds: number) => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-    }
+};
+
+const SathiGuide: React.FC<{ message: string }> = ({ message }) => (
+    <div className="absolute bottom-6 left-6 z-10 flex items-end space-x-4 animate-fade-in-up">
+        <div className="w-20 h-20 rounded-full bg-blue-500/50 backdrop-blur-sm border-2 border-blue-400 flex items-center justify-center sathi-avatar shrink-0">
+            <KioskAvatarIcon className="w-12 h-12 text-white"/>
+        </div>
+        <div className="bg-black/40 backdrop-blur-sm p-4 rounded-xl rounded-bl-none text-white text-lg max-w-sm shadow-lg">
+            <p>{message}</p>
+        </div>
+    </div>
+);
+
+// FIX: Extracted login screen into its own component to fix React Hooks violation.
+const LoginScreen: React.FC<{
+    t: any;
+    loading: boolean;
+    language: Language;
+    handleLogin: () => void;
+}> = ({ t, loading, language, handleLogin }) => {
+    // FIX: The useState hook was called without an initial value, causing a crash. Defaulting to 'qr'.
+    const [authMethod, setAuthMethod] = useState('qr');
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-             <div className="absolute top-4 right-4">
-                <button onClick={() => dispatch({ type: 'LOGOUT' })} className="text-sm font-medium text-gray-600 hover:text-[#C51E3A]">Logout</button>
-            </div>
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-                <div className="flex justify-center items-center space-x-3 mb-6">
-                    <NepalFlagIcon className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold text-gray-800">Verification Kiosk</h1>
+        <div className="text-center text-white flex flex-col items-center justify-center h-full kiosk-screen p-8">
+            <NepalFlagIcon className="h-20 w-auto mb-6" />
+            <h1 className="text-5xl font-extrabold">{t.welcomeTitle}</h1>
+            <p className="text-xl mt-4 max-w-lg opacity-80">{t.welcomeSubtitle}</p>
+
+            <div className="bg-black/20 backdrop-blur-sm p-8 rounded-2xl mt-12 w-full max-w-md shadow-lg border border-white/20">
+                <div className="flex justify-center border-b border-white/20 mb-6">
+                    <button onClick={() => setAuthMethod('qr')} className={`px-4 py-2 text-lg font-semibold ${authMethod === 'qr' ? 'border-b-2 border-white' : 'text-white/60'}`}>QR</button>
+                    <button onClick={() => setAuthMethod('bio')} className={`px-4 py-2 text-lg font-semibold ${authMethod === 'bio' ? 'border-b-2 border-white' : 'text-white/60'}`}>Biometric</button>
+                    <button onClick={() => setAuthMethod('manual')} className={`px-4 py-2 text-lg font-semibold ${authMethod === 'manual' ? 'border-b-2 border-white' : 'text-white/60'}`}>Manual</button>
                 </div>
-
-                {!scannedData && !error && (
-                    <>
-                        <p className="text-gray-500 mb-4">Manually enter a QR code payload or use a test case.</p>
-                        <textarea
-                            value={qrInput}
-                            onChange={(e) => setQrInput(e.target.value)}
-                            className="w-full h-24 p-2 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                            placeholder='e.g., {"userId": "...", "expiry": 1716386400000, ...}'
-                        />
-                        <button 
-                            onClick={() => handleVerify(qrInput)}
-                            className="w-full mt-4 bg-[#003893] text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-800 transition flex items-center justify-center space-x-2"
-                        >
-                            <KeyIcon className="w-5 h-5" />
-                            <span>Verify Code</span>
-                        </button>
-                         <div className="mt-6">
-                            <p className="text-xs text-gray-400 uppercase font-semibold mb-2">Or use a test case</p>
-                            <div className="flex justify-center space-x-2">
-                                <button onClick={() => handleTestCase(MOCK_VALID_QR)} className="text-sm bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-md hover:bg-green-200 transition">Valid</button>
-                                <button onClick={() => handleTestCase(MOCK_EXPIRED_QR)} className="text-sm bg-yellow-100 text-yellow-700 font-semibold px-3 py-1 rounded-md hover:bg-yellow-200 transition">Expired</button>
-                                <button onClick={() => handleTestCase(MOCK_INVALID_QR)} className="text-sm bg-red-100 text-red-700 font-semibold px-3 py-1 rounded-md hover:bg-red-200 transition">Invalid</button>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {scannedData && (
-                    <div className="animate-fade-in">
-                        <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                            <CheckCircleIcon className="w-16 h-16 text-green-500" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-green-600">{scannedData.status}</h2>
-                        <div className="mt-6 text-left bg-gray-50 p-4 rounded-lg">
-                            <p><span className="font-semibold">Name:</span> {scannedData.name}</p>
-                            <p><span className="font-semibold">Token:</span> {scannedData.token}</p>
-                        </div>
-                         {timeLeft !== null && (
-                            <div className="mt-4 font-bold text-lg text-gray-700">
-                                Expires in: <span className={timeLeft < 11 ? 'text-red-500 animate-pulse' : ''}>{formatTime(timeLeft)}</span>
-                            </div>
-                        )}
-                         <button onClick={handleReset} className="mt-8 w-full bg-gray-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-600 transition">Scan Next</button>
-                    </div>
-                )}
                 
-                {error && (
-                     <div className="animate-fade-in">
-                         <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                            <XIcon className="w-16 h-16 text-red-500" />
-                         </div>
-                        <h2 className="text-2xl font-bold text-red-600">{error}</h2>
-                        <button onClick={handleReset} className="mt-8 w-full bg-gray-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-600 transition">Try Again</button>
+                {loading ? (
+                     <div className="h-48 flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 border-8 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        <p className="text-xl mt-6 opacity-80">{language === 'en' ? 'Authenticating...' : 'प्रमाणीकरण हुँदैछ...'}</p>
+                    </div>
+                ) : (
+                    <div className="h-48 flex flex-col items-center justify-center">
+                        {authMethod === 'qr' && <QrCodeIcon className="w-24 h-24 text-white/50 mb-4" />}
+                        {authMethod === 'bio' && <FingerprintIcon className="w-24 h-24 text-white/50 mb-4" />}
+                        {authMethod === 'manual' && <IdCardIcon className="w-24 h-24 text-white/50 mb-4" />}
+                        <p className="text-white/80">{
+                            authMethod === 'qr' ? 'Scan your Nagarik Card QR Code' :
+                            authMethod === 'bio' ? 'Place your finger on the scanner' :
+                            'Enter your Citizenship Number'
+                        }</p>
                     </div>
                 )}
+
             </div>
+            <button onClick={handleLogin} disabled={loading} className="mt-8 bg-[#C8102E] font-bold text-xl py-4 px-10 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105 disabled:bg-gray-500">
+               {language === 'en' ? "Simulate Login" : "लगइन सिमुलेट गर्नुहोस्"}
+            </button>
+        </div>
+    );
+};
+
+const KioskPortal: React.FC = () => {
+    const { state: appState, dispatch: appDispatch } = useContext(AppContext);
+    const [kioskState, kioskDispatch] = useReducer(kioskReducer, initialState);
+    const inactivityTimer = useRef<number | undefined>();
+    
+    const { screen, language, currentUser, selectedCategory, selectedService, currentApplication, loading } = kioskState;
+    const t = translations[language];
+
+    const resetInactivityTimer = () => {
+        window.clearTimeout(inactivityTimer.current);
+        inactivityTimer.current = window.setTimeout(() => {
+            kioskDispatch({ type: 'LOGOUT' });
+        }, 300000); // 5 minutes
+    };
+    
+    useEffect(() => {
+        document.body.addEventListener('click', resetInactivityTimer);
+        document.body.addEventListener('keypress', resetInactivityTimer);
+        resetInactivityTimer();
+
+        return () => {
+            window.clearTimeout(inactivityTimer.current);
+            document.body.removeEventListener('click', resetInactivityTimer);
+            document.body.removeEventListener('keypress', resetInactivityTimer);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (screen === 'goodbye') {
+            const timer = window.setTimeout(() => {
+                kioskDispatch({ type: 'RESET' });
+            }, 5000);
+            return () => window.clearTimeout(timer);
+        }
+    }, [screen]);
+
+    const handleLogin = () => {
+        kioskDispatch({ type: 'SET_LOADING', payload: true });
+        // Simulate an async login process
+        setTimeout(() => {
+            // In a real app, you'd verify credentials. Here we just use the mock user.
+            kioskDispatch({ type: 'LOGIN', payload: MOCK_CITIZEN_PROFILE });
+        }, 1500);
+    };
+
+    const handleSelectCategory = (category: string) => {
+        kioskDispatch({ type: 'SELECT_CATEGORY', payload: category });
+    };
+
+    const handleSelectService = (service: Service) => {
+        kioskDispatch({ type: 'SELECT_SERVICE', payload: service });
+    };
+
+    const handleSubmitApplication = () => {
+        if (!selectedService || !currentUser) return;
+        
+        const newApp: Application = {
+            ...MOCK_APPLICATIONS[0], // Use a mock for simplicity
+            id: `app-kiosk-${Date.now()}`,
+            serviceId: selectedService.id,
+            userId: currentUser.id,
+            submittedAt: new Date(),
+            token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
+        };
+        
+        appDispatch({ type: 'UPSERT_APPLICATION', payload: newApp });
+        kioskDispatch({ type: 'SUBMIT_APPLICATION', payload: newApp });
+    };
+
+    const handlePayment = () => {
+        kioskDispatch({ type: 'SET_LOADING', payload: true });
+        setTimeout(() => {
+            kioskDispatch({ type: 'COMPLETE_PAYMENT' });
+        }, 2000);
+    };
+
+    const serviceCategories = [
+        { name: language === 'en' ? 'Transport' : ' यातायात', icon: CarIcon, category: 'Transport' },
+        { name: language === 'en' ? 'Revenue' : ' राजस्व', icon: LandPlotIcon, category: 'Revenue' },
+        { name: language === 'en' ? 'Civil Registration' : ' नागरिक पञ्जीकरण', icon: UsersIcon, category: 'Civil Registration' },
+        { name: language === 'en' ? 'Utilities' : 'उपयोगिताहरू', icon: CreditCardIcon, category: 'Utilities' },
+    ];
+    
+    const renderScreen = () => {
+        switch (screen) {
+            case 'login':
+                return <LoginScreen t={t} loading={loading} language={language} handleLogin={handleLogin} />;
+            case 'dashboard':
+                if (!currentUser) return null;
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                        <SathiGuide message={`${t.sathiDashboard}`} />
+                        <h1 className="text-5xl font-extrabold">{t.dashboardTitle}{currentUser.name}</h1>
+                        <p className="text-xl mt-2 opacity-80">{t.dashboardSubtitle}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+                            <button onClick={() => kioskDispatch({ type: 'START_APPLICATION_FLOW' })} className="kiosk-card group">
+                                <FileTextIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
+                                <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'Apply for Service' : 'सेवाको लागि आवेदन दिनुहोस्'}</h2>
+                            </button>
+                            <button className="kiosk-card group">
+                                <BriefcaseIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
+                                <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'My Applications' : 'मेरो आवेदनहरू'}</h2>
+                            </button>
+                             <button onClick={() => kioskDispatch({ type: 'LOGOUT' })} className="kiosk-card group bg-red-500/30 border-red-400/50 hover:bg-red-500/50">
+                                <LogOutIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
+                                <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'Logout' : 'लगआउट'}</h2>
+                            </button>
+                        </div>
+                    </div>
+                );
+            case 'service_categories':
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                        <SathiGuide message={t.sathiServices} />
+                        <button onClick={() => kioskDispatch({ type: 'BACK_TO_DASHBOARD' })} className="kiosk-back-button">{t.backButton}</button>
+                        <h1 className="text-5xl font-extrabold text-center">{t.servicesTitle}</h1>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
+                            {serviceCategories.map(cat => (
+                                <button key={cat.category} onClick={() => handleSelectCategory(cat.category)} className="kiosk-card group">
+                                    <cat.icon className="w-20 h-20 text-white/80 group-hover:scale-110 transition-transform"/>
+                                    <h2 className="text-2xl font-bold mt-4">{cat.name}</h2>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'service_list':
+                const filteredServices = appState.services.filter(s => s.category === selectedCategory);
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                        <button onClick={() => kioskDispatch({ type: 'BACK_TO_CATEGORIES' })} className="kiosk-back-button">{t.backButton}</button>
+                        <h1 className="text-5xl font-extrabold text-center">{t.serviceListTitle}</h1>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+                            {filteredServices.map(service => (
+                                <button key={service.id} onClick={() => handleSelectService(service)} className="kiosk-card group text-left p-6">
+                                    <h2 className="text-2xl font-bold">{service.name}</h2>
+                                    <p className="text-white/70 mt-2 text-base">{service.description}</p>
+                                    <p className="font-bold text-lg mt-4">{new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR' }).format(service.fee)}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'application':
+                if (!selectedService || !currentUser) return null;
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                        <SathiGuide message={t.sathiApp} />
+                        <button onClick={() => kioskDispatch({ type: 'BACK_TO_SERVICE_LIST' })} className="kiosk-back-button">{t.backButton}</button>
+                        <h1 className="text-5xl font-extrabold text-center">{t.appTitle}</h1>
+                        <div className="bg-black/20 backdrop-blur-sm p-8 rounded-2xl mt-12 max-w-2xl mx-auto border border-white/20">
+                            <h2 className="text-3xl font-bold mb-6">{selectedService.name}</h2>
+                            <div className="space-y-4 text-lg">
+                                {Object.entries(selectedService.formSchema.properties).map(([key, prop]) => (
+                                    <div key={key} className="flex justify-between">
+                                        <span className="text-white/70">{prop.title}:</span>
+                                        <span className="font-semibold">{prop.mapping === 'user.name' ? currentUser.name : 'Auto-filled Data'}</span>
+                                    </div>
+                                ))}
+                            </div>
+                             <div className="border-t border-white/20 my-6"></div>
+                             <div className="flex justify-between text-2xl font-bold">
+                                <span>{language === 'en' ? 'Fee:' : 'शुल्क:'}</span>
+                                <span>{new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR' }).format(selectedService.fee)}</span>
+                             </div>
+                        </div>
+                        <div className="text-center mt-8">
+                             <button onClick={handleSubmitApplication} className="kiosk-cta-button">
+                                {t.appConfirmButton} <ArrowRightIcon className="w-6 h-6 ml-2"/>
+                            </button>
+                        </div>
+                    </div>
+                );
+            case 'payment':
+                 if (!selectedService || !currentApplication) return null;
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                         <SathiGuide message={t.sathiPayment} />
+                        <h1 className="text-5xl font-extrabold text-center">{t.paymentTitle}</h1>
+                        <div className="bg-black/20 backdrop-blur-sm p-8 rounded-2xl mt-12 max-w-lg mx-auto border border-white/20 text-center">
+                             <h2 className="text-2xl font-bold">{selectedService.name}</h2>
+                             <p className="text-6xl font-extrabold my-8">{new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR' }).format(selectedService.fee)}</p>
+                             <p className="text-white/70">{language === 'en' ? 'Please use the terminal below to complete your payment.' : 'कृपया आफ्नो भुक्तानी पूरा गर्न तलको टर्मिनल प्रयोग गर्नुहोस्।'}</p>
+                        </div>
+                        <div className="text-center mt-8">
+                             <button onClick={handlePayment} disabled={loading} className="kiosk-cta-button disabled:bg-gray-600">
+                                {loading ? (language === 'en' ? 'Processing...' : 'प्रशोधन हुँदैछ...') : t.paymentButton}
+                            </button>
+                        </div>
+                    </div>
+                );
+            case 'receipt':
+                if (!selectedService || !currentApplication) return null;
+                return (
+                     <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                         <SathiGuide message={t.sathiReceipt} />
+                         <h1 className="text-5xl font-extrabold text-center">{t.receiptTitle}</h1>
+                          <div className="bg-white text-gray-800 p-8 rounded-lg mt-12 max-w-lg mx-auto font-mono shadow-2xl">
+                              <div className="text-center border-b pb-4">
+                                  <h2 className="text-2xl font-bold">GovFlow Kiosk</h2>
+                                  <p className="text-sm">Transaction Receipt</p>
+                              </div>
+                              <div className="space-y-2 mt-4 text-sm">
+                                  <p><strong>Service:</strong> {selectedService.name}</p>
+                                  <p><strong>Token:</strong> {currentApplication.token}</p>
+                                  <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
+                                  <p><strong>Amount Paid:</strong> {new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR' }).format(selectedService.fee)}</p>
+                              </div>
+                              <div className="text-center mt-6">
+                                  <PrinterIcon className="w-12 h-12 text-gray-400 mx-auto"/>
+                                  <p className="text-xs mt-2 text-gray-500">Please take your printed receipt</p>
+                              </div>
+                          </div>
+                          <div className="text-center mt-8">
+                              <button onClick={() => kioskDispatch({ type: 'FINISH_SESSION' })} className="kiosk-cta-button">
+                                 {t.finishButton}
+                              </button>
+                          </div>
+                     </div>
+                );
+            case 'goodbye':
+                return (
+                    <div className="kiosk-screen text-white flex flex-col items-center justify-center text-center p-8 animate-fade-in">
+                        <CheckCircleIcon className="w-24 h-24 text-white mb-6"/>
+                        <h1 className="text-5xl font-extrabold">{t.goodbyeTitle}</h1>
+                        <p className="text-xl mt-4 opacity-80">{t.goodbyeSubtitle}</p>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+    
+    return (
+        <div className="min-h-screen bg-gray-900 overflow-hidden relative">
+            <style>{`
+                .kiosk-screen {
+                    min-height: 100vh;
+                    background: linear-gradient(145deg, #003893 0%, #2a5298 50%, #C8102E 100%);
+                }
+                @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+                .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+                @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-fade-in-up { animation: fade-in-up 0.5s ease-out forwards; }
+                
+                .kiosk-card {
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 1.5rem;
+                    padding: 2rem;
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+                }
+                .kiosk-card:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-10px);
+                    box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.3);
+                }
+                .kiosk-cta-button {
+                    background-color: #C8102E;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 1.25rem;
+                    padding: 1rem 2.5rem;
+                    border-radius: 0.5rem;
+                    box-shadow: 0 4px 15px rgba(200, 16, 46, 0.4);
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                }
+                .kiosk-cta-button:hover {
+                    background-color: #A40D26;
+                    transform: scale(1.05);
+                }
+                 .kiosk-back-button {
+                    position: absolute;
+                    top: 2rem;
+                    left: 2rem;
+                    background: rgba(0,0,0,0.2);
+                    color: white;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 999px;
+                    font-weight: bold;
+                    transition: background-color 0.2s;
+                }
+                .kiosk-back-button:hover {
+                    background: rgba(0,0,0,0.4);
+                }
+                @keyframes sathi-pulse {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7); }
+                    70% { box-shadow: 0 0 0 20px rgba(96, 165, 250, 0); }
+                }
+                .sathi-avatar {
+                    animation: sathi-pulse 2s infinite;
+                }
+            `}</style>
+
+            <div className="absolute top-6 right-6 z-20 flex space-x-2 bg-black/20 p-1 rounded-full">
+                <button onClick={() => kioskDispatch({ type: 'SET_LANGUAGE', payload: 'en' })} className={`px-3 py-1 text-sm rounded-full ${language === 'en' ? 'bg-white text-black' : 'text-white'}`}>EN</button>
+                <button onClick={() => kioskDispatch({ type: 'SET_LANGUAGE', payload: 'np' })} className={`px-3 py-1 text-sm rounded-full ${language === 'np' ? 'bg-white text-black' : 'text-white'}`}>NE</button>
+            </div>
+            
+            {renderScreen()}
         </div>
     );
 };
