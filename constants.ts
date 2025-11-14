@@ -1,4 +1,4 @@
-import { Profile, Service, WalletDocument, Application, Office, PaymentDue, Transaction, Notification, OfficeBranch, FAQ } from './types';
+import { Profile, Service, WalletDocument, Application, Office, PaymentDue, Transaction, Notification, OfficeBranch, FAQ, Kiosk, PolicyCircular, AuditLog } from './types';
 
 export const MOCK_OFFICES: Office[] = [
   { id: 'office-1', name: 'Transport Management Office, Ekantakuna' },
@@ -35,6 +35,13 @@ export const MOCK_KIOSK_PROFILE: Profile = {
     email: 'kiosk@gov.np',
     role: 'kiosk',
     officeId: 'office-1',
+};
+
+export const MOCK_SUPER_ADMIN_PROFILE: Profile = {
+    id: 'd4e5f6a7-b8c9-0123-4567-890abcdef3',
+    name: 'Rastra Sevak',
+    email: 'superadmin@gov.np',
+    role: 'super_admin',
 };
 
 
@@ -348,4 +355,27 @@ export const MOCK_FAQS: FAQ[] = [
     { q: "What does 'document verification' mean?", a: "When you upload a document to your digital wallet, it is sent to the relevant government authority for verification. Once verified, you can use it for any service without needing to re-submit it. This process ensures your documents are authentic and secure." },
     { q: "How long does it take for my application to be approved?", a: "Processing times vary by service. Each service in the catalog provides an estimated time. You can track the real-time status of your application on the 'My Applications' page." },
     { q: "How do I renew my driving license?", a: "You can renew your driving license by navigating to the 'Service Catalog', selecting 'Driving License Renewal', and starting the application. Ensure your current license and citizenship are verified in your wallet." },
+];
+
+export const MOCK_KIOSKS: Kiosk[] = [
+    { id: 'kiosk-01', location: 'New Road, Kathmandu', municipality: 'Kathmandu', status: 'Online', lastSync: new Date(Date.now() - 5 * 60 * 1000), printCount: 124 },
+    { id: 'kiosk-02', location: 'Lakeside, Pokhara', municipality: 'Pokhara', status: 'Online', lastSync: new Date(Date.now() - 2 * 60 * 1000), printCount: 88 },
+    { id: 'kiosk-03', location: 'Bus Park, Biratnagar', municipality: 'Biratnagar', status: 'Offline', lastSync: new Date(Date.now() - 2 * 60 * 60 * 1000), printCount: 210 },
+    { id: 'kiosk-04', location: 'DAO Office, Butwal', municipality: 'Butwal', status: 'Maintenance', lastSync: new Date(Date.now() - 24 * 60 * 60 * 1000), printCount: 56 },
+];
+
+export const MOCK_POLICIES: PolicyCircular[] = [
+    { id: 'pol-01', title: 'Updated Land Tax Regulations 2081', publishedDate: new Date('2024-07-15'), status: 'Active', url: '#' },
+    { id: 'pol-02', title: 'Digital Signature Usage Guidelines', publishedDate: new Date('2024-06-20'), status: 'Active', url: '#' },
+    { id: 'pol-03', title: 'Public Holiday Circular for Ashadh', publishedDate: new Date('2024-06-01'), status: 'Archived', url: '#' },
+];
+
+export const MOCK_AUDIT_LOGS: AuditLog[] = [
+    { id: 'log-1', timestamp: new Date(Date.now() - 2 * 60 * 1000), actorId: MOCK_ADMIN_PROFILE.id, actorName: MOCK_ADMIN_PROFILE.name, action: 'APPROVE_APPLICATION', details: 'Approved application TKN-1123 for service svc-land-tax.', ipAddress: '202.51.74.110' },
+    { id: 'log-2', timestamp: new Date(Date.now() - 5 * 60 * 1000), actorId: MOCK_SUPER_ADMIN_PROFILE.id, actorName: MOCK_SUPER_ADMIN_PROFILE.name, action: 'SUSPEND_USER', details: 'Suspended officer account: officer@gov.np.', ipAddress: '110.34.22.81' },
+    { id: 'log-3', timestamp: new Date(Date.now() - 15 * 60 * 1000), actorId: 'system', actorName: 'System', action: 'KIOSK_STATUS_CHANGE', details: 'Kiosk kiosk-03 reported status: Offline.', ipAddress: '127.0.0.1' },
+    { id: 'log-4', timestamp: new Date(Date.now() - 30 * 60 * 1000), actorId: MOCK_CITIZEN_PROFILE.id, actorName: MOCK_CITIZEN_PROFILE.name, action: 'SUBMIT_APPLICATION', details: 'Submitted application for service svc-dl-renew.', ipAddress: '182.93.88.2' },
+    { id: 'log-5', timestamp: new Date(Date.now() - 60 * 60 * 1000), actorId: MOCK_SUPER_ADMIN_PROFILE.id, actorName: MOCK_SUPER_ADMIN_PROFILE.name, action: 'PUBLISH_POLICY', details: 'Published new policy: Updated Land Tax Regulations 2081.', ipAddress: '110.34.22.81' },
+    { id: 'log-6', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), actorId: MOCK_ADMIN_PROFILE.id, actorName: MOCK_ADMIN_PROFILE.name, action: 'LOGIN_SUCCESS', details: 'User logged in successfully.', ipAddress: '202.51.74.110' },
+    { id: 'log-7', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), actorId: MOCK_CITIZEN_PROFILE.id, actorName: MOCK_CITIZEN_PROFILE.name, action: 'UPLOAD_DOCUMENT', details: 'Uploaded document passport_maya.pdf to wallet.', ipAddress: '182.93.88.2' },
 ];

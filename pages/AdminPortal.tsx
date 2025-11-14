@@ -1,9 +1,10 @@
 
+
 import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Service, Application, WalletDocument, Profile, Notification, Office } from '../types';
 import { MOCK_OFFICES } from '../constants';
-import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon, BellIcon, BuildingIcon, WalletIcon } from '../components/icons';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon, BellIcon, BuildingIcon, WalletIcon, HistoryIcon, FileTextIcon } from '../components/icons';
 import ApplicationDetailModal from '../components/ApplicationDetailModal';
 import ServiceEditorModal from '../components/ServiceEditorModal';
 import UserEditorModal from '../components/UserEditorModal';
@@ -12,7 +13,7 @@ import DigitalWalletPage from '../components/DigitalWalletPage';
 const BarChart: React.FC<{ title: string, data: { label: string, value: number }[] }> = ({ title, data }) => {
     const maxValue = Math.max(...data.map(d => d.value), 1);
     return (
-        <div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md h-full">
             <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">{title}</h4>
             <div className="space-y-3">
                 {data.map(item => (
@@ -369,14 +370,214 @@ const NotificationPortal: React.FC = () => {
     )
 }
 
+
+// --- Sub-components for Application Management ---
+
+const StatCard: React.FC<{ icon: React.ElementType; title: string; value: string; description: string; }> = ({ icon: Icon, title, value, description }) => (
+    <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-4">
+            <div className="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-lg">
+                <Icon className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{title}</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</p>
+            </div>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{description}</p>
+    </div>
+);
+
+const OfficeDashboard: React.FC<{
+    setView: (view: 'dashboard' | 'queue') => void;
+    applications: Application[];
+    services: Service[];
+    allCitizenProfiles: Profile[];
+}> = ({ setView, applications, services, allCitizenProfiles }) => {
+
+    const isToday = (someDate: Date) => {
+        const today = new Date();
+        return someDate.getDate() === today.getDate() &&
+               someDate.getMonth() === today.getMonth() &&
+               someDate.getFullYear() === today.getFullYear();
+    };
+
+    const stats = useMemo(() => {
+        const pendingStatuses = ['Submitted', 'Processing', 'More Info Requested'];
+        const totalPending = applications.filter(a => pendingStatuses.includes(a.status)).length;
+        const pendingToday = applications.filter(a => pendingStatuses.includes(a.status) && isToday(new Date(a.submittedAt))).length;
+        
+        const completedToday = applications.filter(a => {
+            const lastStatus = a.statusHistory[a.statusHistory.length - 1];
+            return (a.status === 'Approved' || a.status === 'Rejected') && lastStatus && isToday(new Date(lastStatus.timestamp));
+        }).length;
+
+        return { totalPending, pendingToday, completedToday };
+    }, [applications]);
+
+     const serviceVolumeData = useMemo(() => {
+        return services.map(s => ({
+            label: s.name,
+            value: applications.filter(a => a.serviceId === s.id && (a.status === 'Processing' || a.status === 'Submitted')).length
+        })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+    }, [applications, services]);
+
+    const recentApplications = useMemo(() => {
+        return [...applications].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).slice(0, 5);
+    }, [applications]);
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                    <h2 className="text-2xl font-bold">Office Dashboard</h2>
+                    <p className="text-gray-500 dark:text-gray-400">Welcome back, here's your workload overview.</p>
+                </div>
+                 <button 
+                    onClick={() => setView('queue')}
+                    className="bg-[#C8102E] text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-red-700 transition mt-2 sm:mt-0"
+                >
+                    View Full Application Queue
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard icon={HourglassIcon} title="Today's Pending Cases" value={stats.pendingToday.toString()} description="New requests received today." />
+                <StatCard icon={BriefcaseIcon} title="Total Pending" value={stats.totalPending.toString()} description="All unresolved applications." />
+                <StatCard icon={CheckCircleIcon} title="Completed Today" value={stats.completedToday.toString()} description="Applications approved or rejected today." />
+                <StatCard icon={HistoryIcon} title="Avg. Processing Time" value="2.5 Days" description="Based on last 7 days." />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <BarChart title="Pending Volume By Service" data={serviceVolumeData} />
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Recent Activity</h4>
+                    <ul className="space-y-4">
+                        {recentApplications.map(app => {
+                             const citizen = allCitizenProfiles.find(p => p.id === app.userId);
+                             const service = services.find(s => s.id === app.serviceId);
+                             return (
+                                <li key={app.id} className="flex items-center space-x-3 text-sm">
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400 text-xs shrink-0">
+                                        {citizen?.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-gray-800 dark:text-gray-200">
+                                            <span className="font-bold">{citizen?.name || 'Unknown'}</span> applied for <span className="font-bold">{service?.name || 'a service'}</span>.
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(app.submittedAt).toLocaleString()}</p>
+                                    </div>
+                                </li>
+                             )
+                        })}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ApplicationQueue: React.FC<{
+    setView: (view: 'dashboard' | 'queue') => void;
+}> = ({ setView }) => {
+    const { state, dispatch } = useContext(AppContext);
+    const { applications, services, allCitizenProfiles } = state;
+
+    const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
+    const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+
+    const filteredApplications = useMemo(() => 
+        applications.filter(app => app.serviceId === selectedServiceId),
+        [applications, selectedServiceId]
+    );
+
+    const queue = useMemo(() => 
+        filteredApplications.filter(app => app.status === 'Approved').sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()),
+        [filteredApplications]
+    );
+
+     const handleCallNext = () => {
+        const nextInQueue = queue[0];
+        if (nextInQueue && nextInQueue.token) {
+            dispatch({ type: 'CALL_NEXT_TOKEN', payload: nextInQueue.token });
+        }
+    };
+    
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
+            <div className="flex items-center mb-4">
+                 <button onClick={() => setView('dashboard')} className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-[#003893] dark:hover:text-blue-400 mr-4">
+                    &larr; Back to Dashboard
+                </button>
+                <h2 className="text-2xl font-bold">Application Queue</h2>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                <select 
+                    value={selectedServiceId}
+                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                    className="p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md w-full sm:w-auto"
+                >
+                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <button 
+                    onClick={handleCallNext} 
+                    disabled={queue.length === 0}
+                    className="bg-[#C8102E] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 w-full sm:w-auto"
+                >
+                    Call Next (Token: {queue[0]?.token || 'N/A'})
+                </button>
+            </div>
+             <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Token</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitted</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {filteredApplications.length > 0 ? filteredApplications.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).map((app) => {
+                            const citizen = allCitizenProfiles.find(p => p.id === app.userId);
+                            return (
+                                <tr key={app.id} onClick={() => setSelectedApp(app)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{app.token || 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{citizen?.name || 'Unknown'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(app.submittedAt).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{app.status}</td>
+                                </tr>
+                            );
+                        }) : (
+                            <tr>
+                                <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">No applications for this service.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            {selectedApp && (
+                <ApplicationDetailModal 
+                    application={selectedApp}
+                    service={services.find(s => s.id === selectedApp.serviceId)}
+                    citizen={allCitizenProfiles.find(p => p.id === selectedApp.userId)}
+                    onClose={() => setSelectedApp(null)}
+                />
+            )}
+        </div>
+    );
+};
+
+
 // --- Main Admin Portal Component ---
 const AdminPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
     const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
     
     const [activeTab, setActiveTab] = useState('applications');
+    const [applicationView, setApplicationView] = useState<'dashboard' | 'queue'>('dashboard');
     
-    const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
     const [selectedApp, setSelectedApp] = useState<Application | null>(null);
     const [isServiceEditorOpen, setIsServiceEditorOpen] = useState(false);
     const [editingService, setEditingService] = useState<Service | null>(null);
@@ -384,15 +585,6 @@ const AdminPortal: React.FC = () => {
     const [editingUser, setEditingUser] = useState<Profile | null>(null);
     const [viewingCitizenWallet, setViewingCitizenWallet] = useState<Profile | null>(null);
     
-    const filteredApplications = useMemo(() => 
-        applications.filter(app => app.serviceId === selectedServiceId),
-        [applications, selectedServiceId]
-    );
-
-    const queue = useMemo(() => 
-        filteredApplications.filter(app => app.status === 'Approved').sort((a, b) => a.submittedAt.getTime() - b.submittedAt.getTime()),
-        [filteredApplications]
-    );
 
     const citizensWithDocCount = useMemo(() => {
         return allCitizenProfiles.map(profile => {
@@ -401,13 +593,6 @@ const AdminPortal: React.FC = () => {
             return { ...profile, docCount, pendingCount };
         });
     }, [allCitizenProfiles, allWalletDocuments]);
-
-    const handleCallNext = () => {
-        const nextInQueue = queue[0];
-        if (nextInQueue && nextInQueue.token) {
-            dispatch({ type: 'CALL_NEXT_TOKEN', payload: nextInQueue.token });
-        }
-    };
 
     const handleVerify = (documentId: string) => {
         dispatch({ type: 'VERIFY_DOCUMENT', payload: { documentId } });
@@ -471,54 +656,14 @@ const AdminPortal: React.FC = () => {
                 </div>
                 
                 {activeTab === 'applications' && (
-                    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
-                        <h2 className="text-2xl font-bold mb-4">Application Management</h2>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-                            <select 
-                                value={selectedServiceId}
-                                onChange={(e) => setSelectedServiceId(e.target.value)}
-                                className="p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md w-full sm:w-auto"
-                            >
-                                {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                            <button 
-                                onClick={handleCallNext} 
-                                disabled={queue.length === 0}
-                                className="bg-[#C8102E] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 w-full sm:w-auto"
-                            >
-                                Call Next (Token: {queue[0]?.token || 'N/A'})
-                            </button>
-                        </div>
-                         <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Token</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitted</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    {filteredApplications.length > 0 ? filteredApplications.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()).map((app) => {
-                                        const citizen = allCitizenProfiles.find(p => p.id === app.userId);
-                                        return (
-                                            <tr key={app.id} onClick={() => setSelectedApp(app)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{app.token || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{citizen?.name || 'Unknown'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{app.submittedAt.toLocaleDateString()}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{app.status}</td>
-                                            </tr>
-                                        );
-                                    }) : (
-                                        <tr>
-                                            <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">No applications for this service.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    applicationView === 'dashboard'
+                    ? <OfficeDashboard 
+                        setView={setApplicationView} 
+                        applications={applications} 
+                        services={services} 
+                        allCitizenProfiles={allCitizenProfiles} 
+                      />
+                    : <ApplicationQueue setView={setApplicationView} />
                 )}
 
                  {activeTab === 'citizens' && (

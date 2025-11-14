@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { Service } from '../types';
-import { NepalFlagIcon, XIcon } from './icons';
+import { NepalFlagIcon, XIcon, MicIcon } from './icons';
+import { AppContext } from '../context/AppContext';
 
 interface SathiAiModalProps {
     services: Service[];
@@ -13,12 +14,28 @@ interface Message {
     text: string;
 }
 
+// Add types for the Web Speech API to resolve TypeScript errors.
+interface SpeechRecognition {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start(): void;
+    stop(): void;
+    onstart: () => void;
+    onend: () => void;
+    onerror: (event: any) => void;
+    onresult: (event: any) => void;
+}
+
 const SathiAiModal: React.FC<SathiAiModalProps> = ({ services, onClose }) => {
+    const { dispatch } = useContext(AppContext);
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: 'Namaste! I am Sathi AI, your personal assistant for GovFlow services. How can I help you today?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -26,6 +43,82 @@ const SathiAiModal: React.FC<SathiAiModalProps> = ({ services, onClose }) => {
     };
 
     useEffect(scrollToBottom, [messages, isLoading]);
+    
+    // Effect for cleaning up speech recognition on component unmount
+    useEffect(() => {
+        return () => {
+            recognitionRef.current?.stop();
+        };
+    }, []);
+
+    const handleMicClick = () => {
+        if (isLoading) return;
+
+        // Cast window to `any` to access non-standard SpeechRecognition API.
+        const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+        if (!SpeechRecognitionAPI) {
+            dispatch({ type: 'ADD_NOTIFICATION', payload: { message: 'Voice input is not supported on this device.', type: 'info' } });
+            return;
+        }
+
+        if (isRecording) {
+            recognitionRef.current?.stop();
+            return;
+        }
+        
+        const recognition = new SpeechRecognitionAPI();
+        recognitionRef.current = recognition;
+        
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => setIsRecording(true);
+        recognition.onend = () => {
+            setIsRecording(false);
+            recognitionRef.current = null;
+        };
+        recognition.onerror = (event: any) => {
+            console.error("Speech recognition error:", event.error);
+            let errorMessage = `An error occurred with voice input: ${event.error}.`;
+            if (event.error === 'network') {
+                errorMessage = 'Voice recognition service is unavailable. Please check your internet connection and try again.';
+            } else if (event.error === 'no-speech') {
+                errorMessage = 'No speech was detected. Please try again.';
+            } else if (event.error === 'audio-capture') {
+                errorMessage = 'Could not access the microphone. Please check browser permissions.';
+            } else if (event.error === 'not-allowed') {
+                errorMessage = 'Microphone access was denied. Please enable it in browser settings.';
+            }
+            
+            dispatch({
+                type: 'ADD_NOTIFICATION',
+                payload: { message: errorMessage, type: 'info' }
+            });
+            
+            setIsRecording(false);
+            recognitionRef.current = null;
+        };
+
+        recognition.onresult = (event: any) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            setInput(finalTranscript || interimTranscript);
+        };
+
+        setInput('');
+        recognition.start();
+    };
+
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -108,14 +201,28 @@ ${JSON.stringify(services, null, 2)}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Ask about services..."
+                            placeholder={isRecording ? "Listening..." : "Ask about services..."}
                             className="flex-1 w-full border-gray-300 rounded-full shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#003893] focus:border-transparent"
                             disabled={isLoading}
                         />
+                        <button
+                            type="button"
+                            onClick={handleMicClick}
+                            disabled={isLoading}
+                            className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isRecording 
+                                    ? 'bg-red-500 text-white animate-pulse' 
+                                    : 'text-gray-500 hover:bg-gray-100'
+                            }`}
+                            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                            <MicIcon className="w-6 h-6" />
+                        </button>
                         <button 
                             onClick={handleSend}
                             disabled={isLoading || !input.trim()}
                             className="bg-[#C8102E] text-white font-bold p-2 rounded-full shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            aria-label="Send message"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>

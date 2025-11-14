@@ -1,9 +1,8 @@
 
 
-
 import React, { useState, useContext, useEffect, useReducer, useRef, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
-import { MOCK_CITIZEN_PROFILE, MOCK_APPLICATIONS } from '../constants';
+import { MOCK_CITIZEN_PROFILE } from '../constants';
 import { NepalFlagIcon, KioskAvatarIcon, CarIcon, LandPlotIcon, CreditCardIcon, IdCardIcon, FileTextIcon, ArrowRightIcon, KeyIcon, CheckCircleIcon, PrinterIcon, FingerprintIcon, QrCodeIcon, LogOutIcon, UsersIcon } from '../components/icons';
 import { Service, Profile, Application, KioskScreen, Language } from '../types';
 
@@ -23,7 +22,7 @@ type KioskAction =
     | { type: 'SELECT_CATEGORY'; payload: string }
     | { type: 'SELECT_SERVICE'; payload: Service }
     | { type: 'SUBMIT_APPLICATION'; payload: Application }
-    | { type: 'COMPLETE_PAYMENT' }
+    | { type: 'COMPLETE_PAYMENT'; payload: Application }
     | { type: 'FINISH_SESSION' }
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'BACK_TO_DASHBOARD' }
@@ -56,7 +55,7 @@ function kioskReducer(state: KioskState, action: KioskAction): KioskState {
         case 'SUBMIT_APPLICATION':
             return { ...state, screen: 'payment', currentApplication: action.payload };
         case 'COMPLETE_PAYMENT':
-            return { ...state, screen: 'receipt', loading: false };
+            return { ...state, screen: 'receipt', loading: false, currentApplication: action.payload };
         case 'FINISH_SESSION':
             return { ...state, screen: 'dashboard', selectedCategory: null, selectedService: null, currentApplication: null };
         case 'SET_LOADING':
@@ -255,12 +254,12 @@ const LoginScreen: React.FC<{ t: any; loading: boolean; language: Language; hand
                                                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/20 flex flex-col justify-between">
                                                     <div className="relative h-full">
-                                                        <div className="absolute top-0 left-0 w-full h-1.5 bg-red-400 animate-scan-line"></div>
+                                                        <div className="absolute top-0 left-0 w-full h-2 bg-red-500 animate-scan-line"></div>
                                                     </div>
                                                     <div className="p-3 bg-black/50">
                                                         <p className="text-white/90 text-center text-sm font-semibold animate-pulse">{language === 'en' ? 'Scanning... Hold your QR code steady.' : 'स्क्यान गर्दै... आफ्नो QR कोड स्थिर राख्नुहोस्।'}</p>
-                                                        <div className="w-full bg-white/20 rounded-full h-2 mt-2">
-                                                            <div className="bg-green-400 h-2 rounded-full progress-bar-inner" style={{ width: `${scanProgress}%` }}></div>
+                                                        <div className="w-full bg-white/20 rounded-full h-3 mt-2">
+                                                            <div className="h-3 rounded-full progress-bar-inner" style={{ width: `${scanProgress}%` }}></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -364,13 +363,22 @@ export const KioskPortal: React.FC = () => {
     const handleSubmitApplication = () => {
         if (!selectedService || !currentUser) return;
         
+        if (!selectedService.offices || selectedService.offices.length === 0) {
+            console.error("Selected service has no offices assigned.");
+            // Here you might want to show an error to the user
+            return;
+        }
+
         const newApp: Application = {
-            ...MOCK_APPLICATIONS[0],
             id: `app-kiosk-${Date.now()}`,
             serviceId: selectedService.id,
             userId: currentUser.id,
             submittedAt: new Date(),
-            token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
+            status: 'Pending Payment',
+            paymentStatus: 'Unpaid',
+            statusHistory: [{ status: 'Pending Payment', timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }],
+            formData: {}, // In a real app, form data would be collected based on the service schema
+            officeId: selectedService.offices[0].id, // Default to the first office
         };
         
         appDispatch({ type: 'UPSERT_APPLICATION', payload: newApp });
@@ -379,9 +387,37 @@ export const KioskPortal: React.FC = () => {
 
     const handlePayment = () => {
         kioskDispatch({ type: 'SET_LOADING', payload: true });
-        setTimeout(() => {
-            kioskDispatch({ type: 'COMPLETE_PAYMENT' });
-        }, 2000);
+
+        if (currentApplication) {
+            const submittedApp: Application = {
+                ...currentApplication,
+                status: 'Submitted',
+                paymentStatus: 'Paid',
+                token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
+                statusHistory: [
+                    ...currentApplication.statusHistory,
+                    { status: 'Submitted', timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }
+                ]
+            };
+            appDispatch({ type: 'UPSERT_APPLICATION', payload: submittedApp });
+
+            // Simulate processing start after a short delay
+            setTimeout(() => {
+                const processingApp = {
+                    ...submittedApp,
+                    status: 'Processing' as const,
+                     statusHistory: [
+                        ...submittedApp.statusHistory,
+                        { status: 'Processing' as const, timestamp: new Date(), hash: `0x${Math.random().toString(16).slice(2, 10)}` }
+                    ]
+                };
+                appDispatch({ type: 'UPSERT_APPLICATION', payload: processingApp });
+            }, 1000);
+
+            setTimeout(() => {
+                kioskDispatch({ type: 'COMPLETE_PAYMENT', payload: submittedApp });
+            }, 2000);
+        }
     };
 
     const serviceCategories = [
@@ -652,23 +688,28 @@ export const KioskPortal: React.FC = () => {
                     animation: sathi-pulse 2s infinite;
                 }
                 @keyframes scan-line {
-                    0% { transform: translateY(-100%); }
-                    100% { transform: translateY(256px); } /* h-64 is 256px */
+                    0% { transform: translateY(-100%); opacity: 0.5; }
+                    50% { opacity: 1; }
+                    100% { transform: translateY(256px); opacity: 0.5; } /* h-64 is 256px */
                 }
                 .animate-scan-line {
                     animation: scan-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-                    box-shadow: 0 0 20px 4px #C8102E;
+                    box-shadow: 0 0 30px 8px #FF4444; 
+                    filter: blur(1px);
                 }
                 .progress-bar-inner {
                     transition: width 0.1s linear;
+                    background-image: linear-gradient(to right, #4ade80, #34d399); 
                 }
                 @keyframes flash-success {
                     0% { box-shadow: inset 0 0 0 0px rgba(74, 222, 128, 0); }
-                    50% { box-shadow: inset 0 0 0 12px rgba(74, 222, 128, 0.8); }
+                    50% { 
+                        box-shadow: inset 0 0 0 16px rgba(52, 211, 153, 0.9); 
+                    }
                     100% { box-shadow: inset 0 0 0 0px rgba(74, 222, 128, 0); }
                 }
                 .animate-flash-success {
-                    animation: flash-success 0.6s ease-out;
+                    animation: flash-success 0.8s ease-out;
                 }
             `}</style>
 

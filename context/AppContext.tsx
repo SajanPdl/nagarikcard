@@ -1,9 +1,10 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
-import { Profile, Application, WalletDocument, Service, CitizenPage, Notification, Theme, Language, AccessibilityState } from '../types';
-import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE, MOCK_NOTIFICATIONS } from '../constants';
+import { Profile, Application, WalletDocument, Service, CitizenPage, Notification, Theme, Language, AccessibilityState, Kiosk, AuditLog, PolicyCircular, OfficeBranch } from '../types';
+// FIX: Corrected typo from MOCK_APplications to MOCK_APPLICATIONS.
+import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE, MOCK_NOTIFICATIONS, MOCK_SUPER_ADMIN_PROFILE, MOCK_KIOSKS, MOCK_POLICIES, MOCK_AUDIT_LOGS } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login' | 'notifications';
+type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login' | 'notifications' | 'government';
 
 interface Toast {
     id: number;
@@ -29,13 +30,16 @@ interface AppState {
   language: Language;
   accessibility: AccessibilityState;
   isAiModalOpen: boolean;
+  kiosks: Kiosk[];
+  auditLogs: AuditLog[];
+  policies: PolicyCircular[];
 }
 
 type Action =
   | { type: 'SET_VIEW'; payload: View }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SESSION'; payload: { user: SupabaseUser | null; profile: Profile | null } }
-  | { type: 'LOGIN'; payload: { email: string, role: 'citizen' | 'admin' | 'kiosk' } }
+  | { type: 'LOGIN'; payload: { email: string, role: 'citizen' | 'admin' | 'kiosk' | 'super_admin' } }
   | { type: 'SIGNUP'; payload: { name: string; email: string } }
   | { type: 'SET_SERVICES'; payload: Service[] }
   | { type: 'SET_WALLET'; payload: WalletDocument[] }
@@ -62,7 +66,12 @@ type Action =
   | { type: 'SET_LANGUAGE'; payload: Language }
   | { type: 'SET_FONT_SIZE'; payload: AccessibilityState['fontSize'] }
   | { type: 'SET_CONTRAST'; payload: AccessibilityState['contrast'] }
-  | { type: 'TOGGLE_AI_MODAL' };
+  | { type: 'TOGGLE_AI_MODAL' }
+  | { type: 'SET_KIOSKS'; payload: Kiosk[] }
+  | { type: 'SET_AUDIT_LOGS'; payload: AuditLog[] }
+  | { type: 'SET_POLICIES'; payload: PolicyCircular[] }
+  | { type: 'BROADCAST_NOTIFICATION', payload: Omit<Notification, 'id' | 'audit' | 'created_by' | 'created_at' | 'read'> }
+  | { type: 'SUSPEND_USER', payload: string };
 
 
 const initialState: AppState = {
@@ -86,6 +95,9 @@ const initialState: AppState = {
     contrast: 'normal',
   },
   isAiModalOpen: false,
+  kiosks: [],
+  auditLogs: [],
+  policies: [],
 };
 
 const updateApplicationStatus = (
@@ -122,23 +134,26 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'SET_SESSION':
-      return { ...state, user: action.payload.user, profile: action.payload.profile, view: action.payload.profile ? action.payload.profile.role : 'landing', isLoading: false };
+      const userProfile = action.payload.profile;
+      const view = userProfile ? (userProfile.role === 'super_admin' ? 'government' : userProfile.role) : 'landing';
+      return { ...state, user: action.payload.user, profile: userProfile, view: view as View, isLoading: false };
     case 'LOGOUT':
         return { ...initialState, isLoading: false, view: 'landing', services: state.services, citizenPage: 'dashboard', theme: state.theme };
     case 'LOGIN': {
         const { email, role } = action.payload;
         let profile: Profile | undefined;
-        let allProfiles: Profile[] = [ ...state.allCitizenProfiles, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE ];
+        let allProfiles: Profile[] = [ ...state.allCitizenProfiles, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE, MOCK_SUPER_ADMIN_PROFILE ];
 
         profile = allProfiles.find(p => p.email === email && p.role === role);
 
         if (profile) {
             const mockUser = { id: profile.id, email: profile.email };
+            const nextView = profile.role === 'super_admin' ? 'government' : profile.role;
             return {
                 ...state,
                 user: mockUser as any,
                 profile,
-                view: profile.role,
+                view: nextView as View,
                 citizenPage: 'dashboard', // Reset to dashboard on login
                 toasts: [...state.toasts, { id: Date.now(), message: `Welcome back, ${profile.name}!`, type: 'success'}]
             };
@@ -347,6 +362,34 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return { ...state, accessibility: { ...state.accessibility, contrast: action.payload } };
     case 'TOGGLE_AI_MODAL':
         return { ...state, isAiModalOpen: !state.isAiModalOpen };
+    case 'SET_KIOSKS':
+      return { ...state, kiosks: action.payload };
+    case 'SET_AUDIT_LOGS':
+      return { ...state, auditLogs: action.payload.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) };
+    case 'SET_POLICIES':
+      return { ...state, policies: action.payload.sort((a, b) => b.publishedDate.getTime() - a.publishedDate.getTime()) };
+    case 'BROADCAST_NOTIFICATION': {
+      const newNotif: Notification = {
+        ...action.payload,
+        id: `notif-${Date.now()}`,
+        created_by: state.profile?.id || 'system_admin',
+        created_at: new Date(),
+        read: false,
+        audit: [{ actor: state.profile?.id || 'system_admin', action: 'created', timestamp: new Date() }],
+      };
+      return {
+        ...state,
+        notifications: [newNotif, ...state.notifications].sort((a,b) => b.created_at.getTime() - a.created_at.getTime()),
+        toasts: [...state.toasts, { id: Date.now(), message: `Broadcast Sent: "${newNotif.title}"`, type: 'success' }]
+      };
+    }
+    case 'SUSPEND_USER': {
+        const userToSuspend = state.allCitizenProfiles.find(p => p.id === action.payload) || [MOCK_ADMIN_PROFILE, MOCK_SUPER_ADMIN_PROFILE].find(p => p.id === action.payload);
+        return {
+            ...state,
+            toasts: [...state.toasts, { id: Date.now(), message: `User "${userToSuspend?.name || 'Unknown'}" has been suspended.`, type: 'info' }]
+        };
+    }
     default:
       return state;
   }
@@ -372,6 +415,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
     dispatch({ type: 'SET_NOTIFICATIONS', payload: MOCK_NOTIFICATIONS });
+    dispatch({ type: 'SET_KIOSKS', payload: MOCK_KIOSKS });
+    dispatch({ type: 'SET_POLICIES', payload: MOCK_POLICIES });
+    dispatch({ type: 'SET_AUDIT_LOGS', payload: MOCK_AUDIT_LOGS });
     // This pre-populates admin-viewable data
     dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
         profiles: MOCK_ALL_CITIZENS,
@@ -417,9 +463,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 dispatch({ type: 'SET_WALLET', payload: [] });
                 dispatch({ type: 'SET_APPLICATIONS', payload: [] });
             }
-        } else if(state.profile.role === 'admin') {
+        } else if(state.profile.role === 'admin' || state.profile.role === 'super_admin') {
             dispatch({ type: 'SET_APPLICATIONS', payload: MOCK_APPLICATIONS });
-            // Admin data already loaded in initial effect
+            // Admin/Super Admin data already loaded in initial effect
         } else { // Kiosk
             dispatch({ type: 'SET_WALLET', payload: [] });
             dispatch({ type: 'SET_APPLICATIONS', payload: [] });

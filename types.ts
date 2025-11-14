@@ -3,7 +3,7 @@ export interface Profile {
   phone?: string;
   email?: string;
   name: string;
-  role: 'citizen' | 'admin' | 'kiosk';
+  role: 'citizen' | 'admin' | 'kiosk' | 'super_admin';
   officeId?: string;
 }
 
@@ -143,4 +143,31 @@ export interface AccessibilityState {
 export interface FAQ {
     q: string;
     a: string;
+}
+
+export interface Kiosk {
+  id: string;
+  location: string;
+  municipality: string;
+  status: 'Online' | 'Offline' | 'Maintenance';
+  lastSync: Date;
+  printCount: number;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: Date;
+  actorId: string;
+  actorName: string;
+  action: string;
+  details: string;
+  ipAddress: string;
+}
+
+export interface PolicyCircular {
+  id: string;
+  title: string;
+  publishedDate: Date;
+  status: 'Active' | 'Archived';
+  url: string; // link to the document
 }

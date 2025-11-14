@@ -2,6 +2,7 @@
   "name": "GovFlow - Seamless E-Governance",
   "description": "An award-winning, ultra-high fidelity presentation of 'GovFlow', a new e-governance PWA. This platform allows citizens to submit requests to government services and enables seamless, end-to-end tracking, predictive alerts, and government workflow automation.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

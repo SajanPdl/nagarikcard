@@ -1,5 +1,6 @@
 
 
+
 import React, { useContext } from 'react';
 import { AppContext } from './context/AppContext';
 import LandingPage from './pages/LandingPage';
@@ -12,6 +13,7 @@ import { NepalFlagIcon } from './components/icons';
 import Header from './components/Header';
 import SathiAiModal from './components/SathiAiModal';
 import NotificationsPage from './pages/citizen/NotificationsPage';
+import GovernmentPortal from './pages/GovernmentPortal';
 
 const App: React.FC = () => {
   const { state, dispatch } = useContext(AppContext);
@@ -34,13 +36,13 @@ const App: React.FC = () => {
   }
 
   const renderView = () => {
-    const isProtectedView = ['citizen', 'admin', 'kiosk'].includes(view);
+    const isProtectedView = ['citizen', 'admin', 'kiosk', 'government'].includes(view);
 
     if (isProtectedView && !user) {
-        return <LoginPage intendedView={view as 'citizen' | 'admin' | 'kiosk'} />;
+        return <LoginPage intendedView={view as 'citizen' | 'admin' | 'kiosk' | 'government'} />;
     }
 
-    if(user && profile && view !== profile.role && isProtectedView) {
+    if(user && profile && view !== (profile.role === 'super_admin' ? 'government' : profile.role) && isProtectedView) {
         // Logged in but trying to access wrong portal, redirect to their own portal
         return renderCorrectPortal(profile.role);
     }
@@ -50,6 +52,8 @@ const App: React.FC = () => {
         return <CitizenPortal />;
       case 'admin':
         return <AdminPortal />;
+      case 'government':
+        return <GovernmentPortal />;
       case 'kiosk':
         return <KioskPortal />;
       case 'login':
@@ -62,16 +66,17 @@ const App: React.FC = () => {
     }
   };
   
-  const renderCorrectPortal = (role: 'citizen' | 'admin' | 'kiosk') => {
+  const renderCorrectPortal = (role: 'citizen' | 'admin' | 'kiosk' | 'super_admin') => {
       switch(role) {
           case 'citizen': return <CitizenPortal />;
           case 'admin': return <AdminPortal />;
           case 'kiosk': return <KioskPortal />;
+          case 'super_admin': return <GovernmentPortal />;
           default: return <LandingPage />;
       }
   }
 
-  const showHeader = view !== 'kiosk';
+  const showHeader = view !== 'kiosk' && view !== 'government';
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-200">

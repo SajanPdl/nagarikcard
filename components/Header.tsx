@@ -87,7 +87,8 @@ const Header: React.FC = () => {
         return () => clearTimeout(handler);
     }, [searchQuery, services, applications]);
 
-    const handleNav = (targetView: 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login') => {
+    // FIX: Expanded handleNav to accept 'government' view type for super_admin role.
+    const handleNav = (targetView: 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login' | 'government') => {
         dispatch({ type: 'SET_VIEW', payload: targetView });
         setIsMenuOpen(false);
     };
@@ -148,7 +149,8 @@ const Header: React.FC = () => {
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-sm sticky top-0 z-50 h-20">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
                 <div className="flex items-center justify-between h-full">
-                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNav(profile ? profile.role : 'landing')}>
+                    {/* FIX: Mapped super_admin role to 'government' view to match handleNav type. */}
+                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNav(profile ? (profile.role === 'super_admin' ? 'government' : profile.role) : 'landing')}>
                         <GovFlowLogoIcon className="h-12 w-auto" />
                         <div>
                             <h1 className="text-xl font-bold text-gray-800 dark:text-white">GovFlow</h1>
