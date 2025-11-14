@@ -12,6 +12,7 @@ const QrCodeModal: React.FC<QrCodeModalProps> = ({ user, onClose }) => {
 
     useEffect(() => {
         if (timeLeft <= 0) return;
+        // This interval ensures the component re-renders every second.
         const timer = setInterval(() => {
             setTimeLeft(prev => prev - 1);
         }, 1000);
@@ -22,10 +23,12 @@ const QrCodeModal: React.FC<QrCodeModalProps> = ({ user, onClose }) => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
 
+    // By including Date.now(), the QR code's value changes on every re-render,
+    // which happens every second due to the timeLeft state update.
     const qrValue = JSON.stringify({
         userId: user.id,
         name: user.name,
-        token: 'DL-KTM-105', // Example token
+        timestamp: Date.now(),
         expiry: Date.now() + timeLeft * 1000,
     });
 
@@ -36,7 +39,7 @@ const QrCodeModal: React.FC<QrCodeModalProps> = ({ user, onClose }) => {
                  <h2 className="text-xl font-bold mb-4">Your Dynamic QR ID</h2>
                  <p className="text-sm text-gray-600 mb-6">Present this code for verification. It is valid for a limited time for your security.</p>
                  <div className="p-4 border-4 border-gray-200 rounded-lg inline-block">
-                    <QRCode value={qrValue} size={200} />
+                    <QRCode value={qrValue} size={200} includeMargin={true} />
                  </div>
                  <div className={`mt-6 font-bold text-lg ${timeLeft < 60 ? 'text-red-500' : 'text-gray-700'}`}>
                     Expires in: {minutes}:{seconds < 10 ? `0${seconds}` : seconds}

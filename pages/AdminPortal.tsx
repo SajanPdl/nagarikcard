@@ -1,7 +1,9 @@
+
 import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { Service, Application, WalletDocument, Profile } from '../types';
-import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon } from '../components/icons';
+import { Service, Application, WalletDocument, Profile, Notification, Office } from '../types';
+import { MOCK_OFFICES } from '../constants';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon, BellIcon, BuildingIcon } from '../components/icons';
 import ApplicationDetailModal from '../components/ApplicationDetailModal';
 import ServiceEditorModal from '../components/ServiceEditorModal';
 import UserEditorModal from '../components/UserEditorModal';
@@ -10,12 +12,12 @@ const BarChart: React.FC<{ title: string, data: { label: string, value: number }
     const maxValue = Math.max(...data.map(d => d.value), 1);
     return (
         <div>
-            <h4 className="font-semibold text-gray-700 mb-4">{title}</h4>
+            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">{title}</h4>
             <div className="space-y-3">
                 {data.map(item => (
                     <div key={item.label} className="grid grid-cols-4 gap-2 items-center">
-                        <span className="text-sm text-gray-600 col-span-1 truncate">{item.label}</span>
-                        <div className="col-span-3 bg-gray-200 rounded-full h-5">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 col-span-1 truncate">{item.label}</span>
+                        <div className="col-span-3 bg-gray-200 dark:bg-gray-700 rounded-full h-5">
                             <div 
                                 className="bg-blue-500 h-5 rounded-full flex items-center justify-end"
                                 style={{ width: `${(item.value / maxValue) * 100}%` }}
@@ -43,12 +45,12 @@ const SentimentDonut: React.FC<{ data: { positive: number, neutral: number, nega
     )`;
     return (
         <div>
-            <h4 className="font-semibold text-gray-700 mb-4">Citizen Sentiment</h4>
+            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Citizen Sentiment</h4>
             <div className="flex items-center gap-6">
                 <div style={{ background: conicGradient }} className="w-32 h-32 rounded-full flex items-center justify-center">
-                    <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center">
+                    <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-full flex flex-col items-center justify-center">
                         <span className="text-2xl font-bold">{total}</span>
-                        <span className="text-xs text-gray-500">Total</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Total</span>
                     </div>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -63,10 +65,10 @@ const SentimentDonut: React.FC<{ data: { positive: number, neutral: number, nega
 
 const KioskActivityMap: React.FC = () => (
     <div>
-        <h4 className="font-semibold text-gray-700 mb-4">Live Kiosk Activity Map</h4>
-        <div className="bg-gray-100 p-4 rounded-lg flex justify-center items-center aspect-video">
+        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Live Kiosk Activity Map</h4>
+        <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg flex justify-center items-center aspect-video">
             <svg width="100%" height="100%" viewBox="0 0 846 228">
-                <path d="M845.3,212.4l-31.1-15.3l-7.7-25.1l-38.6-15.4l-14.3-29.6l-50.5-0.1l-22.1,14.4l-38.9-14.2l-67.4-45.6L509,114.3l-67.1-18.4l-26.6-27.1L355,47.3L298.6,28L268.9,15.2l-40.4-2.8l-32.9,1.1l-26,14.4L114,68.3L89.1,93.4l14.2,28.2l35.7,16.5l22.7,17.2l49.2,13l42.6,14.3l49,18.4l43.7,18.1l56.8,14.3l42.6,15.3l42.5,14.3l27.1,8.6l59.4,3.7l60.7-0.4l63.2-8Z" fill="#e0e0e0" stroke="#a0a0a0" strokeWidth="1"/>
+                <path d="M845.3,212.4l-31.1-15.3l-7.7-25.1l-38.6-15.4l-14.3-29.6l-50.5-0.1l-22.1,14.4l-38.9-14.2l-67.4-45.6L509,114.3l-67.1-18.4l-26.6-27.1L355,47.3L298.6,28L268.9,15.2l-40.4-2.8l-32.9,1.1l-26,14.4L114,68.3L89.1,93.4l14.2,28.2l35.7,16.5l22.7,17.2l49.2,13l42.6,14.3l49,18.4l43.7,18.1l56.8,14.3l42.6,15.3l42.5,14.3l27.1,8.6l59.4,3.7l60.7-0.4l63.2-8Z" fill="#e0e0e0" className="dark:fill-gray-600" stroke="#a0a0a0" strokeWidth="1"/>
                 <circle cx="490" cy="140" r="15" fill="red" opacity="0.6"><title>Kathmandu Kiosk: 150 Requests</title></circle>
                 <circle cx="320" cy="120" r="10" fill="orange" opacity="0.6"><title>Pokhara Kiosk: 80 Requests</title></circle>
                 <circle cx="730" cy="190" r="8" fill="yellow" opacity="0.6"><title>Biratnagar Kiosk: 50 Requests</title></circle>
@@ -78,6 +80,8 @@ const KioskActivityMap: React.FC = () => (
 
 const RealTimeVolumeChart: React.FC = () => {
     const [data, setData] = useState<{ time: string, requests: number }[]>([]);
+    const { state } = useContext(AppContext);
+    const isDarkMode = state.theme === 'dark';
 
     useEffect(() => {
         const generateInitialData = () => {
@@ -134,7 +138,7 @@ const RealTimeVolumeChart: React.FC = () => {
     
     return (
         <div>
-            <h4 className="font-semibold text-gray-700 mb-4">Real-time Request Volume (All Kiosks)</h4>
+            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Real-time Request Volume (All Kiosks)</h4>
             <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} className="w-full h-auto">
                 <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -148,21 +152,21 @@ const RealTimeVolumeChart: React.FC = () => {
                     <line key={tick}
                         x1={PADDING} y1={SVG_HEIGHT - PADDING - tick * chartHeight}
                         x2={SVG_WIDTH - PADDING} y2={SVG_HEIGHT - PADDING - tick * chartHeight}
-                        stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3,3"
+                        stroke={isDarkMode ? '#374151' : '#e5e7eb'} strokeWidth="1" strokeDasharray="3,3"
                     />
                 ))}
 
                 {/* Y Axis Labels */}
                 {[0, 0.5, 1].map(tick => (
-                    <text key={tick} x={PADDING - 8} y={SVG_HEIGHT - PADDING - tick * chartHeight + 4} textAnchor="end" className="text-xs fill-current text-gray-500">
+                    <text key={tick} x={PADDING - 8} y={SVG_HEIGHT - PADDING - tick * chartHeight + 4} textAnchor="end" className="text-xs fill-current text-gray-500 dark:text-gray-400">
                         {Math.round(tick * maxValue)}
                     </text>
                 ))}
 
                 {/* X Axis Labels */}
-                 <text x={PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="start" className="text-xs fill-current text-gray-500">24h ago</text>
-                 <text x={PADDING + chartWidth / 2} y={SVG_HEIGHT - PADDING + 20} textAnchor="middle" className="text-xs fill-current text-gray-500">12h ago</text>
-                 <text x={SVG_WIDTH - PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="end" className="text-xs fill-current text-gray-500">Now</text>
+                 <text x={PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="start" className="text-xs fill-current text-gray-500 dark:text-gray-400">24h ago</text>
+                 <text x={PADDING + chartWidth / 2} y={SVG_HEIGHT - PADDING + 20} textAnchor="middle" className="text-xs fill-current text-gray-500 dark:text-gray-400">12h ago</text>
+                 <text x={SVG_WIDTH - PADDING} y={SVG_HEIGHT - PADDING + 20} textAnchor="end" className="text-xs fill-current text-gray-500 dark:text-gray-400">Now</text>
                 
                 <path d={areaPath} fill="url(#areaGradient)" style={{ transition: 'd 0.3s ease-in-out' }}/>
                 <path d={linePath} fill="none" stroke="#003893" strokeWidth="2" style={{ transition: 'd 0.3s ease-in-out' }} />
@@ -172,7 +176,7 @@ const RealTimeVolumeChart: React.FC = () => {
                     <animate attributeName="r" from="4" to="12" dur="1.5s" begin="0s" repeatCount="indefinite" />
                     <animate attributeName="opacity" from="1" to="0" dur="1.5s" begin="0s" repeatCount="indefinite" />
                 </circle>
-                <circle cx={lastPoint.x} cy={lastPoint.y} r="4" fill="#003893" stroke="white" strokeWidth="2" />
+                <circle cx={lastPoint.x} cy={lastPoint.y} r="4" fill="#003893" stroke={isDarkMode ? '#111827' : 'white'} strokeWidth="2" />
             </svg>
         </div>
     );
@@ -197,14 +201,14 @@ const AnalyticsPage: React.FC<{ applications: Application[], services: Service[]
     }, [applications]);
 
     return (
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
             <h2 className="text-2xl font-bold mb-6">Analytics & Reports</h2>
             <div className="space-y-8">
-                <div className="pb-8 border-b border-gray-200">
+                <div className="pb-8 border-b border-gray-200 dark:border-gray-700">
                     <RealTimeVolumeChart />
                 </div>
                 <BarChart title="Total Request Volume By Service" data={serviceVolumeData} />
-                <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-gray-200">
+                <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-gray-200 dark:border-gray-700">
                     <SentimentDonut data={sentimentData} />
                     <KioskActivityMap />
                 </div>
@@ -214,11 +218,171 @@ const AnalyticsPage: React.FC<{ applications: Application[], services: Service[]
 };
 
 
+// --- Notification Portal Components ---
+const priorityStyles = {
+    critical: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300', border: 'border-red-500' },
+    high: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-300', border: 'border-orange-500' },
+    medium: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300', border: 'border-yellow-500' },
+    low: { bg: 'bg-gray-100 dark:bg-gray-700/30', text: 'text-gray-800 dark:text-gray-300', border: 'border-gray-500' },
+};
+
+const NotificationCard: React.FC<{ notification: Notification, isSelected: boolean, onSelect: () => void }> = ({ notification, isSelected, onSelect }) => {
+    const office = MOCK_OFFICES.find(o => o.id === notification.office.office_id);
+    const priority = priorityStyles[notification.priority];
+
+    return (
+        <div onClick={onSelect} className={`p-4 border-l-4 ${priority.border} ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-800'} rounded-r-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50`}>
+            <div className="flex justify-between items-start">
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{notification.title}</p>
+                {!notification.read && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 mt-1"></div>}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{office?.name || 'System Wide'}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 truncate">{notification.body}</p>
+            <div className="flex justify-between items-center mt-2">
+                <span className={`px-2 py-0.5 text-xs font-medium rounded ${priority.bg} ${priority.text}`}>{notification.priority}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(notification.created_at).toLocaleDateString()}</span>
+            </div>
+        </div>
+    )
+};
+
+
+const NotificationPortal: React.FC = () => {
+    const { state, dispatch } = useContext(AppContext);
+    const { notifications } = state;
+    const [selectedOfficeId, setSelectedOfficeId] = useState<string | 'all'>('all');
+    const [selectedMunicipality, setSelectedMunicipality] = useState<string | 'all'>('all');
+    const [selectedWard, setSelectedWard] = useState<string | 'all'>('all');
+    const [selectedNotification, setSelectedNotification] = useState<Notification | null>(notifications[0] || null);
+    const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+    const municipalities = useMemo(() => [...new Set(notifications.map(n => n.office.district).filter(Boolean))], [notifications]);
+    
+    const wards = useMemo(() => {
+        if (selectedMunicipality === 'all') {
+            return [...new Set(notifications.map(n => n.office.ward).filter(Boolean))].sort((a,b) => parseInt(a) - parseInt(b));
+        }
+        return [...new Set(notifications.filter(n => n.office.district === selectedMunicipality).map(n => n.office.ward).filter(Boolean))].sort((a,b) => parseInt(a) - parseInt(b));
+    }, [notifications, selectedMunicipality]);
+
+    const filteredNotifications = useMemo(() => {
+        return notifications.filter(n => {
+            const officeMatch = selectedOfficeId === 'all' || n.office.office_id === selectedOfficeId;
+            const municipalityMatch = selectedMunicipality === 'all' || n.office.district === selectedMunicipality;
+            const wardMatch = selectedWard === 'all' || n.office.ward === selectedWard;
+            const readMatch = filter === 'all' || !n.read;
+            return officeMatch && municipalityMatch && wardMatch && readMatch;
+        });
+    }, [notifications, selectedOfficeId, selectedMunicipality, selectedWard, filter]);
+    
+    useEffect(() => {
+        if (filteredNotifications.length > 0 && !filteredNotifications.find(n => n.id === selectedNotification?.id)) {
+            setSelectedNotification(filteredNotifications[0]);
+        } else if (filteredNotifications.length === 0) {
+            setSelectedNotification(null);
+        }
+    }, [filteredNotifications, selectedNotification]);
+
+    const handleSelectNotification = (notification: Notification) => {
+        setSelectedNotification(notification);
+        if(!notification.read) {
+            dispatch({ type: 'MARK_NOTIFICATION_READ', payload: { notificationId: notification.id, read: true } });
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md min-h-[70vh] flex">
+            {/* Left Sidebar - Office Tree */}
+            <div className="w-1/4 border-r dark:border-gray-700 p-4 overflow-y-auto">
+                <h3 className="text-lg font-semibold mb-4">Offices</h3>
+                <ul className="space-y-1">
+                    <li>
+                        <button onClick={() => setSelectedOfficeId('all')} className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${selectedOfficeId === 'all' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>All Offices</button>
+                    </li>
+                    {MOCK_OFFICES.map(office => (
+                        <li key={office.id}>
+                            <button onClick={() => setSelectedOfficeId(office.id)} className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${selectedOfficeId === office.id ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{office.name}</button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            {/* Center Feed - Notifications List */}
+            <div className="w-1/3 border-r dark:border-gray-700 overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
+                <div className="p-4 border-b dark:border-gray-700 sticky top-0 bg-gray-50 dark:bg-gray-900/50 z-10 space-y-3">
+                    <div className="flex space-x-2">
+                        <button onClick={() => setFilter('all')} className={`px-3 py-1 text-sm rounded-full ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>All</button>
+                        <button onClick={() => setFilter('unread')} className={`px-3 py-1 text-sm rounded-full ${filter === 'unread' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>Unread</button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                         <select value={selectedMunicipality} onChange={(e) => {setSelectedMunicipality(e.target.value); setSelectedWard('all');}} className="w-full text-xs border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm">
+                            <option value="all">All Municipalities</option>
+                            {municipalities.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <select value={selectedWard} onChange={(e) => setSelectedWard(e.target.value)} className="w-full text-xs border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm" disabled={wards.length === 0}>
+                            <option value="all">All Wards</option>
+                            {wards.map(w => <option key={w} value={w}>Ward {w}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="p-4 space-y-3">
+                    {filteredNotifications.map(n => (
+                        <NotificationCard key={n.id} notification={n} isSelected={selectedNotification?.id === n.id} onSelect={() => handleSelectNotification(n)} />
+                    ))}
+                </div>
+            </div>
+
+            {/* Right Detail Pane */}
+            <div className="w-5/12 p-6 overflow-y-auto">
+                {selectedNotification ? (
+                    <div>
+                        <h2 className="text-xl font-bold mb-2">{selectedNotification.title}</h2>
+                        <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            <span>{MOCK_OFFICES.find(o => o.id === selectedNotification.office.office_id)?.name}</span>
+                            <span>&bull;</span>
+                            <span>{new Date(selectedNotification.created_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{selectedNotification.body}</p>
+                        
+                        <div className="mt-6 pt-6 border-t dark:border-gray-700">
+                            <h4 className="font-semibold mb-2">Audit Trail</h4>
+                            <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                {selectedNotification.audit.map((entry, i) => (
+                                    <li key={i}>
+                                        <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                                        <span className="capitalize"> {entry.action} by {entry.actor}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                        <BellIcon className="w-16 h-16 mb-4"/>
+                        <p>Select a notification to view details.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// --- Main Admin Portal Component ---
 const AdminPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
     const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
     
-    const [activeTab, setActiveTab] = useState('applications');
+    const initialTab = (window as any).GOVFLOW_INITIAL_ADMIN_TAB || 'applications';
+    const [activeTab, setActiveTab] = useState(initialTab);
+    
+    useEffect(() => {
+        // Reset the global after using it
+        if ((window as any).GOVFLOW_INITIAL_ADMIN_TAB) {
+            (window as any).GOVFLOW_INITIAL_ADMIN_TAB = undefined;
+        }
+    }, []);
+
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
     const [selectedUserId, setSelectedUserId] = useState<string>(allCitizenProfiles[0]?.id || '');
     const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -226,14 +390,6 @@ const AdminPortal: React.FC = () => {
     const [editingService, setEditingService] = useState<Service | null>(null);
     const [isUserEditorOpen, setIsUserEditorOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Profile | null>(null);
-
-    const systemHealthData = [
-        { name: 'Document Verification', status: 'Operational' },
-        { name: 'Application Processing', status: 'Operational' },
-        { name: 'Notification Service', status: 'Operational' },
-        { name: 'Database Connectivity', status: 'Operational' },
-        { name: 'Citizen Authentication', status: 'Operational' },
-    ];
     
     const filteredApplications = useMemo(() => 
         applications.filter(app => app.serviceId === selectedServiceId),
@@ -327,6 +483,7 @@ const AdminPortal: React.FC = () => {
 
     const tabs = [
         { name: 'Applications', id: 'applications', icon: HourglassIcon },
+        { name: 'Notifications', id: 'notifications', icon: BellIcon },
         { name: 'Services', id: 'services', icon: BriefcaseIcon },
         { name: 'Citizens', id: 'citizens', icon: UsersIcon },
         { name: 'Analytics', id: 'analytics', icon: TrendingUpIcon },
@@ -334,213 +491,82 @@ const AdminPortal: React.FC = () => {
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <main className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Center Content: Main Panels */}
-                <div className="lg:col-span-3">
-                    <div className="flex border-b border-gray-200 mb-6">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-t-lg -mb-px focus:outline-none ${
-                                    activeTab === tab.id
-                                        ? 'border-b-2 border-[#003893] text-[#003893]'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
+            <main>
+                <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex shrink-0 items-center space-x-2 px-4 py-2 text-sm font-medium rounded-t-lg -mb-px focus:outline-none ${
+                                activeTab === tab.id
+                                    ? 'border-b-2 border-[#003893] text-[#003893] dark:text-blue-400 dark:border-blue-400'
+                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                            }`}
+                        >
+                            <tab.icon className="w-5 h-5" />
+                            <span>{tab.name}</span>
+                        </button>
+                    ))}
+                </div>
+                
+                {activeTab === 'applications' && (
+                    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
+                        <h2 className="text-2xl font-bold mb-4">Application Management</h2>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                            <select 
+                                value={selectedServiceId}
+                                onChange={(e) => setSelectedServiceId(e.target.value)}
+                                className="p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md w-full sm:w-auto"
                             >
-                                <tab.icon className="w-5 h-5" />
-                                <span>{tab.name}</span>
+                                {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                            <button 
+                                onClick={handleCallNext} 
+                                disabled={queue.length === 0}
+                                className="bg-[#C8102E] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 w-full sm:w-auto"
+                            >
+                                Call Next (Token: {queue[0]?.token || 'N/A'})
                             </button>
-                        ))}
-                    </div>
-                    
-                    {activeTab === 'applications' && (
-                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-                            <h2 className="text-2xl font-bold mb-4">Application Management</h2>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-                                <select 
-                                    value={selectedServiceId}
-                                    onChange={(e) => setSelectedServiceId(e.target.value)}
-                                    className="p-2 border border-gray-300 rounded-md w-full sm:w-auto"
-                                >
-                                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                                <button 
-                                    onClick={handleCallNext} 
-                                    disabled={queue.length === 0}
-                                    className="bg-[#C8102E] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-700 transition disabled:bg-gray-400 w-full sm:w-auto"
-                                >
-                                    Call Next (Token: {queue[0]?.token || 'N/A'})
-                                </button>
-                            </div>
-                             <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                        </div>
+                         <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Token</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitted</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {filteredApplications.length > 0 ? filteredApplications.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()).map((app) => {
+                                        const citizen = allCitizenProfiles.find(p => p.id === app.userId);
+                                        return (
+                                            <tr key={app.id} onClick={() => setSelectedApp(app)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{app.token || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{citizen?.name || 'Unknown'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{app.submittedAt.toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{app.status}</td>
+                                            </tr>
+                                        );
+                                    }) : (
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">No applications for this service.</td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredApplications.length > 0 ? filteredApplications.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()).map((app) => {
-                                            const citizen = allCitizenProfiles.find(p => p.id === app.userId);
-                                            return (
-                                                <tr key={app.id} onClick={() => setSelectedApp(app)} className="cursor-pointer hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.token || 'N/A'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen?.name || 'Unknown'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.submittedAt.toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.status}</td>
-                                                </tr>
-                                            );
-                                        }) : (
-                                            <tr>
-                                                <td colSpan={4} className="text-center py-8 text-gray-500">No applications for this service.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'services' && (
-                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                                <h2 className="text-2xl font-bold">Service Management</h2>
-                                <button onClick={() => openServiceEditor(null)} className="bg-[#003893] text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-blue-800 transition text-sm w-full sm:w-auto">
-                                    Add New Service
-                                </button>
-                            </div>
-                            <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {services.map((service) => (
-                                            <tr key={service.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.category}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs. {service.fee}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                                    <button onClick={() => openServiceEditor(service)} className="text-blue-600 hover:text-blue-900 font-medium">Edit</button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {activeTab === 'citizens' && (
-                        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-                            <h2 className="text-2xl font-bold mb-4">Citizen Directory</h2>
-                            <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Docs</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {citizensWithDocCount.length > 0 ? citizensWithDocCount.map((citizen) => (
-                                            <tr key={citizen.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{citizen.name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen.email}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{citizen.phone || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center font-medium">{citizen.docCount}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                                    <button onClick={() => openUserEditor(citizen)} className="text-blue-600 hover:text-blue-900 font-medium p-1 hover:bg-blue-50 rounded-md">
-                                                        <EditIcon className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )) : (
-                                            <tr>
-                                                <td colSpan={5} className="text-center py-8 text-gray-500">No citizens have registered yet.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'analytics' && (
-                        <AnalyticsPage applications={applications} services={services} />
-                    )}
-                </div>
-
-                {/* Right side: KPIs and other panels */}
-                <div className="lg:col-span-1 space-y-6">
-                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold mb-4 flex items-center"><TrendingUpIcon className="w-5 h-5 mr-2 text-blue-500"/>Key Metrics</h3>
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div>
-                                <UsersIcon className="w-8 h-8 mx-auto text-blue-500 mb-2"/>
-                                <p className="text-2xl font-bold text-gray-800">{kpis.activeUsers}</p>
-                                <p className="text-xs text-gray-500">Active Users</p>
-                            </div>
-                            <div>
-                                <FileCheckIcon className="w-8 h-8 mx-auto text-green-500 mb-2"/>
-                                <p className="text-2xl font-bold text-gray-800">{kpis.processedToday}</p>
-                                <p className="text-xs text-gray-500">Processed Today</p>
-                            </div>
-                            <div>
-                                <HourglassIcon className="w-8 h-8 mx-auto text-yellow-500 mb-2"/>
-                                <p className="text-2xl font-bold text-gray-800">{kpis.avgApprovalTime}</p>
-                                <p className="text-xs text-gray-500">Avg. Approval</p>
-                            </div>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                )}
+                
+                {activeTab === 'notifications' && <NotificationPortal />}
 
-                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold mb-4 flex items-center"><SparklesIcon className="w-5 h-5 mr-2 text-purple-500"/>Real-time Analytics</h3>
-                        <div className="space-y-4 text-sm">
-                             <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-md">
-                                <p className="font-semibold text-yellow-800">Workload Alert</p>
-                                <p className="text-yellow-700">High volume detected for Driving License Renewals. Suggest prioritizing older applications.</p>
-                             </div>
-                             <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-md">
-                                <p className="font-semibold text-blue-800">Citizen Sentiment</p>
-                                <p className="text-blue-700">Overall feedback sentiment is trending <span className="font-bold">Positive</span> this week.</p>
-                             </div>
-                             <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-md">
-                                <p className="font-semibold text-green-800">Efficiency Insight</p>
-                                <p className="text-green-700">Land Tax payments are processing 25% faster than average.</p>
-                             </div>
-                        </div>
-                    </div>
+                {activeTab === 'analytics' && <AnalyticsPage applications={applications} services={services} />}
+                {/* Other tabs can be added here */}
 
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold mb-4">System Health</h3>
-                        <div className="space-y-3">
-                            {systemHealthData.map(service => (
-                                <div key={service.name} className="flex justify-between items-center text-sm">
-                                    <p className="text-gray-600">{service.name}</p>
-                                    <div className={`flex items-center space-x-2 font-medium ${service.status === 'Operational' ? 'text-green-600' : 'text-yellow-600'}`}>
-                                        <div className={`w-2.5 h-2.5 rounded-full ${service.status === 'Operational' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                                        <span>{service.status}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
             </main>
-            {selectedApp && (
+             {selectedApp && (
                 <ApplicationDetailModal 
                     application={selectedApp}
                     service={services.find(s => s.id === selectedApp.serviceId)}
@@ -549,13 +575,13 @@ const AdminPortal: React.FC = () => {
                 />
             )}
             {isServiceEditorOpen && (
-                <ServiceEditorModal
+                <ServiceEditorModal 
                     serviceToEdit={editingService}
                     onSave={handleSaveService}
                     onClose={() => setIsServiceEditorOpen(false)}
                 />
             )}
-            {isUserEditorOpen && (
+             {isUserEditorOpen && (
                 <UserEditorModal
                     userToEdit={editingUser}
                     onSave={handleSaveUser}

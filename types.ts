@@ -80,7 +80,7 @@ export interface FormSchema {
 }
 
 export interface Application {
-  id: string;
+  id:string;
   serviceId: string;
   userId: string;
   submittedAt: Date;
@@ -98,4 +98,49 @@ export interface Application {
   sentiment?: 'positive' | 'neutral' | 'negative';
 }
 
-export type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact' | 'profile-settings';
+export type CitizenPage = 'dashboard' | 'onboarding' | 'service-catalog' | 'application' | 'my-applications' | 'nagarik-wallet' | 'help' | 'community-impact' | 'profile-settings' | 'notifications';
+
+export interface OfficeBranch {
+  ministry?: string;
+  department?: string;
+  district?: string;
+  ward?: string;
+  office_id: string;
+}
+
+export interface NotificationAudit {
+  actor: string; // user ID or system
+  action: string;
+  timestamp: Date;
+}
+
+export interface Notification {
+  id: string;
+  office: OfficeBranch;
+  type: 'announcement' | 'request_status_update' | 'task_assignment' | 'payment_confirmation' | 'kiosk_sync_alert' | 'emergency_alert' | 'system_notice';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  body: string;
+  related_request_id?: string; // e.g., application.id
+  visibility: 'public' | 'internal' | 'private'; // private means for a specific user
+  target_user_id?: string; // if visibility is private
+  created_by: string; // user ID or system
+  created_at: Date;
+  read: boolean;
+  audit: NotificationAudit[];
+}
+
+export type KioskScreen = 'login' | 'dashboard' | 'service_categories' | 'service_list' | 'application' | 'payment' | 'receipt' | 'goodbye';
+export type Language = 'en' | 'np';
+
+export type Theme = 'light' | 'dark';
+
+export interface AccessibilityState {
+    fontSize: 'normal' | 'large' | 'xlarge';
+    contrast: 'normal' | 'high';
+}
+
+export interface FAQ {
+    q: string;
+    a: string;
+}

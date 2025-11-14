@@ -1,4 +1,4 @@
-import { Profile, Service, WalletDocument, Application, Office, PaymentDue, Transaction } from './types';
+import { Profile, Service, WalletDocument, Application, Office, PaymentDue, Transaction, Notification, OfficeBranch, FAQ } from './types';
 
 export const MOCK_OFFICES: Office[] = [
   { id: 'office-1', name: 'Transport Management Office, Ekantakuna' },
@@ -232,3 +232,120 @@ export const MOCK_TRANSACTION_HISTORY: Transaction[] = [
 
 export const MOCK_ALL_CITIZENS = [MOCK_CITIZEN_PROFILE];
 export const MOCK_ALL_WALLET_DOCS = [...MOCK_WALLET];
+
+// --- MOCK NOTIFICATIONS ---
+
+const KATHMANDU_DAO: OfficeBranch = {
+    ministry: 'Ministry of Home Affairs',
+    department: 'District Administration',
+    district: 'Kathmandu',
+    ward: '11',
+    office_id: MOCK_OFFICES[1].id,
+};
+
+const EKANTAKUNA_TMO: OfficeBranch = {
+    ministry: 'Ministry of Physical Infrastructure and Transport',
+    department: 'Transport Management',
+    district: 'Lalitpur',
+    ward: '5',
+    office_id: MOCK_OFFICES[0].id,
+};
+
+const DILLIBAZAR_LRO: OfficeBranch = {
+    ministry: 'Ministry of Land Management, Cooperatives and Poverty Alleviation',
+    department: 'Land Revenue',
+    district: 'Kathmandu',
+    ward: '10',
+    office_id: MOCK_OFFICES[2].id,
+};
+
+export const MOCK_NOTIFICATIONS: Notification[] = [
+    {
+        id: 'notif-1',
+        office: EKANTAKUNA_TMO,
+        type: 'request_status_update',
+        priority: 'medium',
+        title: 'Application Approved: Driving License Renewal',
+        body: 'Your application for Driving License Renewal (Token: TKN-4581) has been approved. Please visit the office for biometrics.',
+        related_request_id: 'app-1',
+        visibility: 'private',
+        target_user_id: MOCK_CITIZEN_PROFILE.id,
+        created_by: 'system_auto',
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        read: false,
+        audit: [
+            { actor: 'system_auto', action: 'created', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) }
+        ]
+    },
+    {
+        id: 'notif-2',
+        office: KATHMANDU_DAO,
+        type: 'announcement',
+        priority: 'low',
+        title: 'Public Holiday Announcement',
+        body: 'All District Administration Offices will be closed on Friday for a public holiday. Please plan your visits accordingly.',
+        visibility: 'public',
+        created_by: MOCK_ADMIN_PROFILE.id,
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        read: true,
+        audit: [
+            { actor: MOCK_ADMIN_PROFILE.id, action: 'created', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+            { actor: MOCK_CITIZEN_PROFILE.id, action: 'read', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+        ]
+    },
+    {
+        id: 'notif-3',
+        office: EKANTAKUNA_TMO,
+        type: 'emergency_alert',
+        priority: 'critical',
+        title: 'URGENT: System Maintenance',
+        body: 'The Transport Management Office online portal will be down for emergency maintenance tonight from 11 PM to 2 AM.',
+        visibility: 'public',
+        created_by: 'system_admin',
+        created_at: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        read: false,
+        audit: [
+            { actor: 'system_admin', action: 'created', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000) }
+        ]
+    },
+    {
+        id: 'notif-4',
+        office: DILLIBAZAR_LRO,
+        type: 'payment_confirmation',
+        priority: 'medium',
+        title: 'Payment Received for Land Tax',
+        body: 'We have successfully received your payment of NPR 2,500 for Land Tax application TKN-1123.',
+        related_request_id: 'app-2',
+        visibility: 'private',
+        target_user_id: MOCK_CITIZEN_PROFILE.id,
+        created_by: 'payment_gateway',
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        read: true,
+        audit: [
+            { actor: 'payment_gateway', action: 'created', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) }
+        ]
+    },
+    {
+        id: 'notif-5',
+        office: KATHMANDU_DAO,
+        type: 'system_notice',
+        priority: 'high',
+        title: 'New Service Available: National ID Card',
+        body: 'Citizens can now apply for their National ID Card through the GovFlow portal. Please ensure your citizenship document is verified in your wallet.',
+        visibility: 'public',
+        created_by: MOCK_ADMIN_PROFILE.id,
+        created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+        read: false,
+        audit: [
+            { actor: MOCK_ADMIN_PROFILE.id, action: 'created', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
+        ]
+    },
+];
+
+export const MOCK_FAQS: FAQ[] = [
+    { q: "What is GovFlow?", a: "GovFlow is a digital platform designed to make it easy for citizens to access government services online. You can apply for services, track your application status, and manage your official documents in one secure place." },
+    { q: "How do I start an application?", a: "From the dashboard, click 'Apply for Service' to see the service catalog. Choose the service you need and click 'Start'. The system will guide you through the process, using documents from your digital wallet to auto-fill forms." },
+    { q: "What does 'document verification' mean?", a: "When you upload a document to your digital wallet, it is sent to the relevant government authority for verification. Once verified, you can use it for any service without needing to re-submit it. This process ensures your documents are authentic and secure." },
+    { q: "How long does it take for my application to be approved?", a: "Processing times vary by service. Each service in the catalog provides an estimated time. You can track the real-time status of your application on the 'My Applications' page." },
+    { q: "How do I renew my driving license?", a: "You can renew your driving license by navigating to the 'Service Catalog', selecting 'Driving License Renewal', and starting the application. Ensure your current license and citizenship are verified in your wallet." },
+];

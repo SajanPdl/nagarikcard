@@ -1,11 +1,11 @@
 import React, { createContext, useReducer, Dispatch, useEffect } from 'react';
-import { Profile, Application, WalletDocument, Service, CitizenPage } from '../types';
-import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE } from '../constants';
+import { Profile, Application, WalletDocument, Service, CitizenPage, Notification, Theme, Language, AccessibilityState } from '../types';
+import { MOCK_SERVICES, MOCK_APPLICATIONS, MOCK_WALLET, MOCK_ALL_CITIZENS, MOCK_ALL_WALLET_DOCS, MOCK_ADMIN_PROFILE, MOCK_KIOSK_PROFILE, MOCK_NOTIFICATIONS } from '../constants';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login';
+type View = 'landing' | 'citizen' | 'admin' | 'kiosk' | 'login' | 'notifications';
 
-interface Notification {
+interface Toast {
     id: number;
     message: string;
     type: 'success' | 'info';
@@ -19,10 +19,16 @@ interface AppState {
   wallet: WalletDocument[];
   applications: Application[];
   services: Service[];
+  toasts: Toast[];
   notifications: Notification[];
   allCitizenProfiles: Profile[];
   allWalletDocuments: WalletDocument[];
   citizenPage: CitizenPage;
+  selectedServiceId: string | null;
+  theme: Theme;
+  language: Language;
+  accessibility: AccessibilityState;
+  isAiModalOpen: boolean;
 }
 
 type Action =
@@ -38,7 +44,7 @@ type Action =
   | { type: 'LOGOUT' }
   | { type: 'UPSERT_APPLICATION'; payload: Application }
   | { type: 'UPSERT_SERVICE'; payload: Service }
-  | { type: 'ADD_NOTIFICATION'; payload: Omit<Notification, 'id'> }
+  | { type: 'ADD_NOTIFICATION'; payload: Omit<Toast, 'id'> }
   | { type: 'REMOVE_NOTIFICATION'; payload: number }
   | { type: 'CALL_NEXT_TOKEN'; payload: string }
   | { type: 'SET_ALL_CITIZEN_DATA'; payload: { profiles: Profile[], documents: WalletDocument[] } }
@@ -48,7 +54,16 @@ type Action =
   | { type: 'APPROVE_APPLICATION', payload: string }
   | { type: 'REJECT_APPLICATION', payload: string }
   | { type: 'REQUEST_INFO_APPLICATION', payload: string }
-  | { type: 'SET_CITIZEN_PAGE', payload: CitizenPage };
+  | { type: 'SET_CITIZEN_PAGE', payload: CitizenPage }
+  | { type: 'SET_SELECTED_SERVICE', payload: string | null }
+  | { type: 'SET_NOTIFICATIONS', payload: Notification[] }
+  | { type: 'MARK_NOTIFICATION_READ', payload: { notificationId: string, read: boolean } }
+  | { type: 'TOGGLE_THEME' }
+  | { type: 'SET_LANGUAGE'; payload: Language }
+  | { type: 'SET_FONT_SIZE'; payload: AccessibilityState['fontSize'] }
+  | { type: 'SET_CONTRAST'; payload: AccessibilityState['contrast'] }
+  | { type: 'TOGGLE_AI_MODAL' };
+
 
 const initialState: AppState = {
   view: 'landing',
@@ -58,10 +73,19 @@ const initialState: AppState = {
   wallet: [],
   applications: [],
   services: [],
+  toasts: [],
   notifications: [],
   allCitizenProfiles: [],
   allWalletDocuments: [],
   citizenPage: 'dashboard',
+  selectedServiceId: null,
+  theme: 'light',
+  language: 'en',
+  accessibility: {
+    fontSize: 'normal',
+    contrast: 'normal',
+  },
+  isAiModalOpen: false,
 };
 
 const updateApplicationStatus = (
@@ -69,7 +93,7 @@ const updateApplicationStatus = (
     appId: string,
     newStatus: Application['status'],
     notificationMessage: string,
-    notificationType: Notification['type'] = 'success'
+    notificationType: Toast['type'] = 'success'
 ): AppState => {
     const appToUpdate = state.applications.find(a => a.id === appId);
     if (!appToUpdate) return state;
@@ -86,7 +110,7 @@ const updateApplicationStatus = (
     return {
         ...state,
         applications: state.applications.map(a => a.id === appId ? updatedApp : a),
-        notifications: [...state.notifications, { id: Date.now(), message: notificationMessage, type: notificationType }]
+        toasts: [...state.toasts, { id: Date.now(), message: notificationMessage, type: notificationType }]
     };
 };
 
@@ -100,7 +124,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'SET_SESSION':
       return { ...state, user: action.payload.user, profile: action.payload.profile, view: action.payload.profile ? action.payload.profile.role : 'landing', isLoading: false };
     case 'LOGOUT':
-        return { ...initialState, isLoading: false, view: 'landing', services: state.services, citizenPage: 'dashboard' };
+        return { ...initialState, isLoading: false, view: 'landing', services: state.services, citizenPage: 'dashboard', theme: state.theme };
     case 'LOGIN': {
         const { email, role } = action.payload;
         let profile: Profile | undefined;
@@ -116,12 +140,12 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 profile,
                 view: profile.role,
                 citizenPage: 'dashboard', // Reset to dashboard on login
-                notifications: [...state.notifications, { id: Date.now(), message: `Welcome back, ${profile.name}!`, type: 'success'}]
+                toasts: [...state.toasts, { id: Date.now(), message: `Welcome back, ${profile.name}!`, type: 'success'}]
             };
         } else {
              return {
                 ...state,
-                notifications: [...state.notifications, { id: Date.now(), message: 'Login failed. User not found.', type: 'info'}]
+                toasts: [...state.toasts, { id: Date.now(), message: 'Login failed. User not found.', type: 'info'}]
             };
         }
     }
@@ -130,7 +154,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         if(state.allCitizenProfiles.some(p => p.email === email)) {
             return {
                 ...state,
-                notifications: [...state.notifications, { id: Date.now(), message: 'An account with this email already exists.', type: 'info'}]
+                toasts: [...state.toasts, { id: Date.now(), message: 'An account with this email already exists.', type: 'info'}]
             };
         }
         
@@ -149,7 +173,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
             profile: newProfile,
             allCitizenProfiles: [...state.allCitizenProfiles, newProfile],
             view: 'citizen',
-            notifications: [...state.notifications, { id: Date.now(), message: `Welcome, ${name}! Your account has been created.`, type: 'success'}]
+            toasts: [...state.toasts, { id: Date.now(), message: `Welcome, ${name}! Your account has been created.`, type: 'success'}]
         };
     }
     case 'SET_SERVICES':
@@ -168,15 +192,15 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return { ...state, applications: action.payload.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()) };
     case 'UPSERT_APPLICATION':
         const existingApp = state.applications.find(a => a.id === action.payload.id);
-        let newNotifications = [...state.notifications];
+        let newToasts = [...state.toasts];
         
         if(existingApp && existingApp.status !== action.payload.status) {
             const service = state.services.find(s => s.id === action.payload.serviceId);
             if (service) {
                 if (action.payload.status === 'Approved') {
-                    newNotifications.push({ id: Date.now(), message: `Application for "${service.name}" has been approved!`, type: 'success' });
+                    newToasts.push({ id: Date.now(), message: `Application for "${service.name}" has been approved!`, type: 'success' });
                 } else if (action.payload.status === 'Called') {
-                    newNotifications.push({ id: Date.now(), message: `Token for "${service.name}" is being called.`, type: 'info' });
+                    newToasts.push({ id: Date.now(), message: `Token for "${service.name}" is being called.`, type: 'info' });
                 }
             }
         }
@@ -187,7 +211,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 ...state.applications.filter(a => a.id !== action.payload.id),
                 action.payload
             ].sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()),
-            notifications: newNotifications,
+            toasts: newToasts,
         };
     case 'UPSERT_SERVICE': {
         const isUpdate = state.services.some(s => s.id === action.payload.id);
@@ -198,16 +222,16 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return {
             ...state,
             services: newServices,
-            notifications: [
-                ...state.notifications,
+            toasts: [
+                ...state.toasts,
                 { id: Date.now(), message: `Service "${action.payload.name}" has been ${isUpdate ? 'updated' : 'created'}.`, type: 'success' }
             ]
         };
     }
     case 'ADD_NOTIFICATION':
-        return { ...state, notifications: [...state.notifications, { id: Date.now(), ...action.payload }] };
+        return { ...state, toasts: [...state.toasts, { id: Date.now(), ...action.payload }] };
     case 'REMOVE_NOTIFICATION':
-        return { ...state, notifications: state.notifications.filter(n => n.id !== action.payload) };
+        return { ...state, toasts: state.toasts.filter(n => n.id !== action.payload) };
     case 'CALL_NEXT_TOKEN': {
         const appToCall = state.applications.find(a => a.token === action.payload && a.status === 'Approved');
         if (!appToCall) return state;
@@ -222,9 +246,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
         };
         
         const service = state.services.find(s => s.id === updatedApp.serviceId);
-        let notifications = [...state.notifications];
+        let toasts = [...state.toasts];
         if (service) {
-            notifications.push({ id: Date.now(), message: `Token for "${service.name}" is being called.`, type: 'info' });
+            toasts.push({ id: Date.now(), message: `Token for "${service.name}" is being called.`, type: 'info' });
         }
 
         return {
@@ -233,7 +257,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 ...state.applications.filter(a => a.id !== updatedApp.id),
                 updatedApp
             ].sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()),
-            notifications: notifications,
+            toasts: toasts,
         };
     }
     case 'SET_ALL_CITIZEN_DATA':
@@ -252,8 +276,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 p.id === updatedProfile.id ? updatedProfile : p
             ),
             profile: isSelfUpdate ? updatedProfile : state.profile,
-            notifications: [
-                ...state.notifications,
+            toasts: [
+                ...state.toasts,
                 { id: Date.now(), message, type: 'success' }
             ]
         }
@@ -267,8 +291,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
             ...state,
             wallet: state.wallet.map(updateDoc),
             allWalletDocuments: state.allWalletDocuments.map(updateDoc),
-            notifications: [
-                ...state.notifications,
+            toasts: [
+                ...state.toasts,
                 { id: Date.now(), message: `"${docName}" has been verified.`, type: 'success' }
             ]
         };
@@ -282,8 +306,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
             ...state,
             wallet: state.wallet.map(updateDoc),
             allWalletDocuments: state.allWalletDocuments.map(updateDoc),
-            notifications: [
-                ...state.notifications,
+            toasts: [
+                ...state.toasts,
                 { id: Date.now(), message: `"${docName}" has been rejected.`, type: 'info' }
             ]
         };
@@ -299,6 +323,30 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
     case 'SET_CITIZEN_PAGE':
         return { ...state, citizenPage: action.payload, view: 'citizen' };
+    case 'SET_SELECTED_SERVICE':
+        return { ...state, selectedServiceId: action.payload };
+    case 'SET_NOTIFICATIONS':
+        return { ...state, notifications: action.payload.sort((a,b) => b.created_at.getTime() - a.created_at.getTime()) };
+    case 'MARK_NOTIFICATION_READ': {
+        const { notificationId, read } = action.payload;
+        return {
+            ...state,
+            notifications: state.notifications.map(n => 
+                n.id === notificationId ? { ...n, read } : n
+            )
+        };
+    }
+    case 'TOGGLE_THEME': {
+        return { ...state, theme: state.theme === 'light' ? 'dark' : 'light' };
+    }
+    case 'SET_LANGUAGE':
+        return { ...state, language: action.payload };
+    case 'SET_FONT_SIZE':
+        return { ...state, accessibility: { ...state.accessibility, fontSize: action.payload } };
+    case 'SET_CONTRAST':
+        return { ...state, accessibility: { ...state.accessibility, contrast: action.payload } };
+    case 'TOGGLE_AI_MODAL':
+        return { ...state, isAiModalOpen: !state.isAiModalOpen };
     default:
       return state;
   }
@@ -316,7 +364,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   useEffect(() => {
+    // This effect runs once on mount to initialize data and theme
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark && initialState.theme === 'light') {
+        dispatch({ type: 'TOGGLE_THEME' });
+    }
+
     dispatch({ type: 'SET_SERVICES', payload: MOCK_SERVICES });
+    dispatch({ type: 'SET_NOTIFICATIONS', payload: MOCK_NOTIFICATIONS });
     // This pre-populates admin-viewable data
     dispatch({ type: 'SET_ALL_CITIZEN_DATA', payload: {
         profiles: MOCK_ALL_CITIZENS,
@@ -324,6 +379,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }});
     dispatch({ type: 'SET_LOADING', payload: false });
   }, []);
+
+  useEffect(() => {
+    // This effect syncs theme and accessibility settings with the DOM
+    const root = document.documentElement;
+    
+    // Theme
+    if (state.theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    
+    // Font Size
+    root.classList.remove('text-size-normal', 'text-size-large', 'text-size-xlarge');
+    root.classList.add(`text-size-${state.accessibility.fontSize}`);
+
+    // Contrast
+     if (state.accessibility.contrast === 'high') {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+
+  }, [state.theme, state.accessibility]);
+
 
   useEffect(() => {
     if (state.profile) {

@@ -14,12 +14,58 @@
         font-family: 'Manrope', sans-serif;
         background-color: #F5F5F5;
       }
+      .dark body {
+        background-color: #111827; /* dark:bg-gray-900 */
+      }
       /* Add a subtle transition to all elements for smoother UI interactions */
       * {
         transition: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 200ms;
       }
+
+      /* Accessibility Styles */
+      html.text-size-large { font-size: 112.5%; /* 18px base */ }
+      html.text-size-xlarge { font-size: 125%; /* 20px base */ }
+
+      html.high-contrast {
+        background-color: #000;
+      }
+      html.high-contrast body {
+        background-color: #000 !important;
+        color: #fff !important;
+      }
+      html.high-contrast .high-contrast-ignore,
+      html.high-contrast .high-contrast-ignore * {
+        /* Allow specific elements like the logo to ignore high contrast */
+        filter: none !important;
+        background-color: initial !important;
+        color: initial !important;
+      }
+      html.high-contrast div, 
+      html.high-contrast header, 
+      html.high-contrast main, 
+      html.high-contrast footer,
+      html.high-contrast section {
+        background-color: #000 !important;
+        color: #fff !important;
+        border-color: #fff !important;
+      }
+       html.high-contrast button, 
+       html.high-contrast input,
+       html.high-contrast select,
+       html.high-contrast textarea {
+         background-color: #111 !important;
+         color: #fff !important;
+         border: 1px solid #fff !important;
+       }
+       html.high-contrast a, html.high-contrast button {
+         color: #0ff !important;
+       }
+       html.high-contrast img, html.high-contrast svg {
+         filter: grayscale(100%) contrast(1000%);
+       }
+
     </style>
   <script type="importmap">
 {

@@ -1,22 +1,13 @@
 
 
-
-
-
-
-import React, { useState, useContext, useEffect, useReducer, useRef } from 'react';
+import React, { useState, useContext, useEffect, useReducer, useRef, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
-// FIX: Corrected typo MOCK_CITZEN_PROFILE to MOCK_CITIZEN_PROFILE.
 import { MOCK_CITIZEN_PROFILE, MOCK_APPLICATIONS } from '../constants';
-import { NepalFlagIcon, KioskAvatarIcon, CarIcon, LandPlotIcon, CreditCardIcon, HealthIcon, IdCardIcon, FileTextIcon, ArrowRightIcon, KeyIcon, CheckCircleIcon, PrinterIcon, PhoneIcon, BookOpenIcon, FingerprintIcon, QrCodeIcon, LogOutIcon, SathiAiIcon, BellIcon, BriefcaseIcon, UsersIcon } from '../components/icons';
-import { Service, Profile, Application } from '../types';
-
-type KioskScreen = 'login' | 'dashboard' | 'service_categories' | 'service_list' | 'authenticate' | 'application' | 'payment' | 'receipt' | 'goodbye';
-type Language = 'en' | 'np';
+import { NepalFlagIcon, KioskAvatarIcon, CarIcon, LandPlotIcon, CreditCardIcon, IdCardIcon, FileTextIcon, ArrowRightIcon, KeyIcon, CheckCircleIcon, PrinterIcon, FingerprintIcon, QrCodeIcon, LogOutIcon, UsersIcon } from '../components/icons';
+import { Service, Profile, Application, KioskScreen, Language } from '../types';
 
 interface KioskState {
     screen: KioskScreen;
-    language: Language;
     currentUser: Profile | null;
     selectedCategory: string | null;
     selectedService: Service | null;
@@ -25,13 +16,11 @@ interface KioskState {
 }
 
 type KioskAction =
-    | { type: 'SET_LANGUAGE'; payload: Language }
     | { type: 'LOGIN'; payload: Profile }
     | { type: 'LOGOUT' }
     | { type: 'START_APPLICATION_FLOW' }
     | { type: 'SELECT_CATEGORY'; payload: string }
     | { type: 'SELECT_SERVICE'; payload: Service }
-    | { type: 'AUTHENTICATE'; payload: Profile } // Kept for inner flow auth if needed
     | { type: 'SUBMIT_APPLICATION'; payload: Application }
     | { type: 'COMPLETE_PAYMENT' }
     | { type: 'FINISH_SESSION' }
@@ -43,7 +32,6 @@ type KioskAction =
 
 const initialState: KioskState = {
     screen: 'login',
-    language: 'np',
     currentUser: null,
     selectedCategory: null,
     selectedService: null,
@@ -53,8 +41,6 @@ const initialState: KioskState = {
 
 function kioskReducer(state: KioskState, action: KioskAction): KioskState {
     switch (action.type) {
-        case 'SET_LANGUAGE':
-            return { ...state, language: action.payload };
         case 'LOGIN':
             return { ...state, screen: 'dashboard', currentUser: action.payload, loading: false };
         case 'LOGOUT':
@@ -65,15 +51,12 @@ function kioskReducer(state: KioskState, action: KioskAction): KioskState {
             return { ...state, screen: 'service_list', selectedCategory: action.payload };
         case 'SELECT_SERVICE':
             return { ...state, screen: 'application', selectedService: action.payload };
-        case 'AUTHENTICATE':
-            return { ...state, screen: 'application', currentUser: action.payload, loading: false };
         case 'SUBMIT_APPLICATION':
             return { ...state, screen: 'payment', currentApplication: action.payload };
         case 'COMPLETE_PAYMENT':
             return { ...state, screen: 'receipt', loading: false };
         case 'FINISH_SESSION':
-            // FIX: Reset session-specific state when finishing a session to ensure a clean slate for the next interaction.
-            return { ...state, screen: 'dashboard', selectedCategory: null, selectedService: null, currentApplication: null }; // Go back to dashboard after a service
+            return { ...state, screen: 'dashboard', selectedCategory: null, selectedService: null, currentApplication: null };
         case 'SET_LOADING':
             return { ...state, loading: action.payload };
         case 'BACK_TO_DASHBOARD':
@@ -100,8 +83,6 @@ const translations = {
         servicesTitle: "Select a Service Category",
         sathiServices: "Please choose the type of service you need. Just tap on one of the icons.",
         serviceListTitle: "Choose a Service",
-        authTitle: "Identity Verification",
-        authSubtitle: "Please scan your Nagarik Card QR code to proceed.",
         sathiAuth: "Great! Now, please verify your identity by scanning your Nagarik Card.",
         appTitle: "Confirm Your Application",
         sathiApp: "We've filled out the form for you using your verified details. Does this look correct?",
@@ -127,8 +108,6 @@ const translations = {
         servicesTitle: "सेवाको श्रेणी छान्नुहोस्",
         sathiServices: "कृपया आवश्यक सेवाको प्रकार छान्नुहोस्। केवल कुनै एक आइकनमा ट्याप गर्नुहोस्।",
         serviceListTitle: "एउटा सेवा छान्नुहोस्",
-        authTitle: "पहिचान प्रमाणीकरण",
-        authSubtitle: "अगाडि बढ्नको लागि कृपया आफ्नो नागरिक कार्डको QR कोड स्क्यान गर्नुहोस्।",
         sathiAuth: "धेरै राम्रो! अब, कृपया आफ्नो नागरिक कार्ड स्क्यान गरेर आफ्नो पहिचान प्रमाणीकरण गर्नुहोस्।",
         appTitle: "आवेदन पुष्टि गर्नुहोस्",
         sathiApp: "हामीले तपाईंको प्रमाणित विवरणहरू प्रयोग गरेर फारम भरेका छौं। के यो सही देखिन्छ?",
@@ -157,18 +136,60 @@ const SathiGuide: React.FC<{ message: string }> = ({ message }) => (
     </div>
 );
 
-// FIX: Extracted login screen into its own component to fix React Hooks violation.
-const LoginScreen: React.FC<{
-    t: any;
-    loading: boolean;
-    language: Language;
-    handleLogin: () => void;
-}> = ({ t, loading, language, handleLogin }) => {
-    // FIX: The useState hook was called without an initial value, causing a crash. Defaulting to 'qr'.
+const LoginScreen: React.FC<{ t: any; loading: boolean; language: Language; handleLogin: () => void; }> = ({ t, loading, language, handleLogin }) => {
     const [authMethod, setAuthMethod] = useState('qr');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+
+     useEffect(() => {
+        let currentStream: MediaStream | null = null;
+        if (authMethod === 'qr' && !loading) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                .then(stream => {
+                    currentStream = stream;
+                    setStream(stream);
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                    setCameraError(null);
+                })
+                .catch(err => {
+                    console.error("Camera error:", err);
+                    setCameraError("Camera access denied. Please enable camera permissions in your browser settings.");
+                    setStream(null);
+                });
+        }
+
+        return () => { // Cleanup function
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+             if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                setStream(null);
+            }
+        };
+    }, [authMethod, loading]);
+
+    useEffect(() => {
+        let scanTimeout: number;
+        if (authMethod === 'qr' && stream && !loading) {
+            // After 3 seconds of showing the camera, simulate a successful scan
+            scanTimeout = window.setTimeout(() => {
+                handleLogin();
+            }, 3000);
+        }
+
+        return () => {
+            clearTimeout(scanTimeout);
+        };
+    }, [authMethod, stream, loading, handleLogin]);
+
 
     return (
         <div className="text-center text-white flex flex-col items-center justify-center h-full kiosk-screen p-8">
+            <SathiGuide message={t.sathiWelcome} />
             <NepalFlagIcon className="h-20 w-auto mb-6" />
             <h1 className="text-5xl font-extrabold">{t.welcomeTitle}</h1>
             <p className="text-xl mt-4 max-w-lg opacity-80">{t.welcomeSubtitle}</p>
@@ -181,37 +202,63 @@ const LoginScreen: React.FC<{
                 </div>
                 
                 {loading ? (
-                     <div className="h-48 flex flex-col items-center justify-center">
+                     <div className="h-64 flex flex-col items-center justify-center">
                         <div className="w-16 h-16 border-8 border-white/20 border-t-white rounded-full animate-spin"></div>
                         <p className="text-xl mt-6 opacity-80">{language === 'en' ? 'Authenticating...' : 'प्रमाणीकरण हुँदैछ...'}</p>
                     </div>
                 ) : (
-                    <div className="h-48 flex flex-col items-center justify-center">
-                        {authMethod === 'qr' && <QrCodeIcon className="w-24 h-24 text-white/50 mb-4" />}
-                        {authMethod === 'bio' && <FingerprintIcon className="w-24 h-24 text-white/50 mb-4" />}
-                        {authMethod === 'manual' && <IdCardIcon className="w-24 h-24 text-white/50 mb-4" />}
-                        <p className="text-white/80">{
-                            authMethod === 'qr' ? 'Scan your Nagarik Card QR Code' :
-                            authMethod === 'bio' ? 'Place your finger on the scanner' :
-                            'Enter your Citizenship Number'
-                        }</p>
+                    <div className="h-64 flex flex-col items-center justify-center">
+                        {authMethod === 'qr' && (
+                            <div className="w-full h-full flex flex-col items-center justify-center">
+                                {cameraError ? (
+                                    <div className="flex flex-col items-center justify-center text-center text-red-300">
+                                        <QrCodeIcon className="w-24 h-24 text-red-400/50 mb-4" />
+                                        <p>{cameraError}</p>
+                                    </div>
+                                ) : stream ? (
+                                     <div className="w-full h-full relative rounded-lg overflow-hidden">
+                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                                        <div className="absolute inset-x-0 bottom-0 bg-black/40 p-2">
+                                            <p className="text-white/90 text-center text-sm font-semibold animate-pulse">{language === 'en' ? 'Scanning...' : 'स्क्यान गर्दै...'}</p>
+                                        </div>
+                                        <div className="absolute top-0 left-0 w-full h-1 bg-red-400 animate-scan-line"></div>
+                                    </div>
+                                ) : (
+                                    <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                )}
+                            </div>
+                        )}
+                        {authMethod === 'bio' && <>
+                            <FingerprintIcon className="w-24 h-24 text-white/50 mb-4" />
+                            <p className="text-white/80">Place your finger on the scanner</p>
+                        </>}
+                        {authMethod === 'manual' && <>
+                            <IdCardIcon className="w-24 h-24 text-white/50 mb-4" />
+                             <p className="text-white/80">Enter your Citizenship Number</p>
+                        </>}
                     </div>
                 )}
-
             </div>
-            <button onClick={handleLogin} disabled={loading} className="mt-8 bg-[#C8102E] font-bold text-xl py-4 px-10 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105 disabled:bg-gray-500">
-               {language === 'en' ? "Simulate Login" : "लगइन सिमुलेट गर्नुहोस्"}
-            </button>
+            {authMethod !== 'qr' && (
+                <button 
+                    onClick={handleLogin} 
+                    disabled={loading} 
+                    className="mt-8 bg-[#C8102E] font-bold text-xl py-4 px-10 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105 disabled:bg-gray-500"
+                >
+                   {language === 'en' ? "Simulate Login" : "लगइन सिमुलेट गर्नुहोस्"}
+                </button>
+            )}
         </div>
     );
 };
 
-const KioskPortal: React.FC = () => {
+export const KioskPortal: React.FC = () => {
     const { state: appState, dispatch: appDispatch } = useContext(AppContext);
     const [kioskState, kioskDispatch] = useReducer(kioskReducer, initialState);
-    const inactivityTimer = useRef<number | undefined>();
+    const inactivityTimer = useRef<number | undefined>(undefined);
     
-    const { screen, language, currentUser, selectedCategory, selectedService, currentApplication, loading } = kioskState;
+    const { screen, currentUser, selectedCategory, selectedService, currentApplication, loading } = kioskState;
+    const { language } = appState;
     const t = translations[language];
 
     const resetInactivityTimer = () => {
@@ -242,14 +289,12 @@ const KioskPortal: React.FC = () => {
         }
     }, [screen]);
 
-    const handleLogin = () => {
+    const handleLogin = useCallback(() => {
         kioskDispatch({ type: 'SET_LOADING', payload: true });
-        // Simulate an async login process
         setTimeout(() => {
-            // In a real app, you'd verify credentials. Here we just use the mock user.
             kioskDispatch({ type: 'LOGIN', payload: MOCK_CITIZEN_PROFILE });
         }, 1500);
-    };
+    }, []);
 
     const handleSelectCategory = (category: string) => {
         kioskDispatch({ type: 'SELECT_CATEGORY', payload: category });
@@ -263,7 +308,7 @@ const KioskPortal: React.FC = () => {
         if (!selectedService || !currentUser) return;
         
         const newApp: Application = {
-            ...MOCK_APPLICATIONS[0], // Use a mock for simplicity
+            ...MOCK_APPLICATIONS[0],
             id: `app-kiosk-${Date.now()}`,
             serviceId: selectedService.id,
             userId: currentUser.id,
@@ -306,7 +351,7 @@ const KioskPortal: React.FC = () => {
                                 <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'Apply for Service' : 'सेवाको लागि आवेदन दिनुहोस्'}</h2>
                             </button>
                             <button className="kiosk-card group">
-                                <BriefcaseIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
+                                <UsersIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
                                 <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'My Applications' : 'मेरो आवेदनहरू'}</h2>
                             </button>
                              <button onClick={() => kioskDispatch({ type: 'LOGOUT' })} className="kiosk-card group bg-red-500/30 border-red-400/50 hover:bg-red-500/50">
@@ -359,12 +404,15 @@ const KioskPortal: React.FC = () => {
                         <div className="bg-black/20 backdrop-blur-sm p-8 rounded-2xl mt-12 max-w-2xl mx-auto border border-white/20">
                             <h2 className="text-3xl font-bold mb-6">{selectedService.name}</h2>
                             <div className="space-y-4 text-lg">
-                                {Object.entries(selectedService.formSchema.properties).map(([key, prop]) => (
-                                    <div key={key} className="flex justify-between">
-                                        <span className="text-white/70">{prop.title}:</span>
-                                        <span className="font-semibold">{prop.mapping === 'user.name' ? currentUser.name : 'Auto-filled Data'}</span>
-                                    </div>
-                                ))}
+                                {Object.keys(selectedService.formSchema.properties).map((key) => {
+                                    const prop = selectedService.formSchema.properties[key];
+                                    return (
+                                        <div key={key} className="flex justify-between">
+                                            <span className="text-white/70">{prop.title}:</span>
+                                            <span className="font-semibold">{prop.mapping === 'user.name' ? currentUser.name : 'Auto-filled Data'}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                              <div className="border-t border-white/20 my-6"></div>
                              <div className="flex justify-between text-2xl font-bold">
@@ -503,11 +551,19 @@ const KioskPortal: React.FC = () => {
                 .sathi-avatar {
                     animation: sathi-pulse 2s infinite;
                 }
+                @keyframes scan-line {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(256px); } /* h-64 is 256px */
+                }
+                .animate-scan-line {
+                    animation: scan-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                    box-shadow: 0 0 10px 2px #C8102E;
+                }
             `}</style>
 
             <div className="absolute top-6 right-6 z-20 flex space-x-2 bg-black/20 p-1 rounded-full">
-                <button onClick={() => kioskDispatch({ type: 'SET_LANGUAGE', payload: 'en' })} className={`px-3 py-1 text-sm rounded-full ${language === 'en' ? 'bg-white text-black' : 'text-white'}`}>EN</button>
-                <button onClick={() => kioskDispatch({ type: 'SET_LANGUAGE', payload: 'np' })} className={`px-3 py-1 text-sm rounded-full ${language === 'np' ? 'bg-white text-black' : 'text-white'}`}>NE</button>
+                <button onClick={() => appDispatch({ type: 'SET_LANGUAGE', payload: 'en' })} className={`px-3 py-1 text-sm rounded-full ${language === 'en' ? 'bg-white text-black' : 'text-white'}`}>EN</button>
+                <button onClick={() => appDispatch({ type: 'SET_LANGUAGE', payload: 'np' })} className={`px-3 py-1 text-sm rounded-full ${language === 'np' ? 'bg-white text-black' : 'text-white'}`}>NE</button>
             </div>
             
             {renderScreen()}

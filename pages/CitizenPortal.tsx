@@ -1,7 +1,8 @@
 
 
 
-import React, { useState, useContext, useEffect } from 'react';
+
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Profile, WalletDocument, Service, Application, Office, CitizenPage } from '../types';
 import { CheckCircleIcon, CreditCardIcon, XCircleIcon, AlertTriangleIcon, SparklesIcon, MapPinIcon, TrendingUpIcon, IdCardIcon, FilePlusIcon, BookOpenIcon, AwardIcon, UserIcon, MessageSquareIcon, ZapIcon, WalletIcon, BellIcon, BriefcaseIcon } from '../components/icons';
@@ -9,8 +10,8 @@ import ServiceCard from '../components/ServiceCard';
 import ApplicationTracker from '../components/ApplicationTracker';
 import QrCodeModal from '../components/QrCodeModal';
 import PaymentModal from '../components/PaymentModal';
-import SathiAiModal from '../components/SathiAiModal';
 import NagarikWalletPage from './citizen/NagarikWalletPage';
+import NotificationsPage from './citizen/NotificationsPage';
 import UploadDocumentModal from '../components/UploadDocumentModal';
 import { MOCK_OFFICES } from '../constants';
 
@@ -56,7 +57,7 @@ const NepalMap: React.FC = () => {
             `}</style>
             <svg width="100%" height="100%" viewBox="0 0 1002 558" preserveAspectRatio="xMidYMid meet">
                 <path
-                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
+                    d="M991.6 410.7l-22.1-3.3-13.8-13.4-25.9-4.8-15.6 3.3-15.8-9-22.9-2-14-11.2-21.7 3.1-18-12.8-15.8-0.2-14-15.4-26.6-1.5-11.2 5.2-16-16.2-22.1 3.3-10-8.8-19.1-1.3-10.8 9.7-20.9-2-14.2 11-10-15.8-17.7-2.3-18.4 13.8-10.8-14-19.1-1.5-13.8 11.2-12.3-13.4-19.1-3.1-16.9 13.6-13-14-20-4.8-13.6 12.5-14.2-12.5-20.4-3.1-12.5 14.2-16-12.8-19.8-1.5-12.6 14.2-15.1-12.5-18.4-0.2-11.7 11.2-18.2-1.3-11.2 12.5-18.2-2.9-10.3 10-17.1-1.5-11.7 12.5-16.9-2.9-9.3 11.2-18.2-2.9-10.8 11.2-16-1.5-11.2 12.5-13-10-18.4 1.3-9.7 10-16-4.4-11.7 11.2-16-1.5-10.8 10-16-4.4-11.7 11.2-14.7-2.9-10.8 10-16.9-4.4-10.8 11.2-13.8-2.9-10.8 11.2-13-1.5-10 12.5-13.8-2.9-9.3 11.2-14.7-2.9-9.3 11.2-10 1.3-5.6 12.5-8.4-1.5-6.7 12.5-9.3-1.5-6.5 13.6-8.4-1.3-6.7 14.7.2 11.2-8.4 2.9-1.5 11.2-8.4 2.9 1.3 12.5-8.4 2.9 2.9 11.2-8.4 2.9 2.9 12.5 10 2.9 4.4 11.2 10 2.9 2.9 12.5 10 1.5 4.4 11.2 11.2 1.5 2.9 12.5 11.2 2.9 2.9 11.2 11.2 2.9 2.9 11.2 12.5 1.5 1.5 12.5 12.5 2.9 1.5 11.2 12.5 2.9 2.9 11.2 11.2 1.5 2.9 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 11.2 12.5 2.9 1.5 10 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 11.2 12.5 1.5 1.5 11.2 13.8 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 2.9 10 12.5 1.5 1.5 10 13.8 1.5 1.5-12.5 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2-1.5 1.5-11.2 11.2z"
                     fill="#e2e8f0"
                     stroke="#a0aec0"
                     strokeWidth="1"
@@ -97,10 +98,11 @@ const Dashboard: React.FC<{
     offices: Office[],
     notifications: any[],
     onNavigate: (page: CitizenPage) => void, 
-    onOpenAi: () => void,
     onQuickApply: (serviceCode: string) => void,
-}> = ({ profile, applications, services, offices, notifications, onNavigate, onOpenAi, onQuickApply }) => {
+}> = ({ profile, applications, services, offices, notifications, onNavigate, onQuickApply }) => {
     
+    const { dispatch } = useContext(AppContext);
+
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return "Good Morning";
@@ -195,7 +197,7 @@ const Dashboard: React.FC<{
 
                 {/* Right Column */}
                 <div className="lg:col-span-1 space-y-8">
-                     <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-xl text-center cursor-pointer hover:shadow-2xl transition-shadow" onClick={onOpenAi}>
+                     <div className="bg-gradient-to-br from-[#003893] to-blue-800 text-white rounded-2xl p-6 shadow-xl text-center cursor-pointer hover:shadow-2xl transition-shadow" onClick={() => dispatch({type: 'TOGGLE_AI_MODAL'})}>
                         <SparklesIcon className="w-10 h-10 mx-auto mb-3" />
                         <h3 className="font-bold text-lg">Sathi.AI Assistant</h3>
                         <p className="text-sm opacity-80 mt-1">Ask me anything about services.</p>
@@ -588,12 +590,12 @@ const ProfileSettingsPage: React.FC<{ profile: Profile, dispatch: React.Dispatch
 
 export const CitizenPortal: React.FC = () => {
   const { state, dispatch } = useContext(AppContext);
-  const { profile, wallet, applications, services, notifications, citizenPage } = state;
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const { profile, wallet, applications, services, toasts, citizenPage, selectedServiceId } = state;
   const [appToPay, setAppToPay] = useState<Application | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const selectedService = useMemo(() => services.find(s => s.id === selectedServiceId) || null, [services, selectedServiceId]);
 
   useEffect(() => {
     if (profile && wallet.length === 0 && citizenPage !== 'onboarding') {
@@ -608,7 +610,7 @@ export const CitizenPortal: React.FC = () => {
   };
 
   const handleSelectService = (service: Service) => {
-    setSelectedService(service);
+    dispatch({ type: 'SET_SELECTED_SERVICE', payload: service.id });
     handleNavigate('application');
   };
   
@@ -685,7 +687,7 @@ export const CitizenPortal: React.FC = () => {
       case 'service-catalog':
         return <ServiceCatalogPage services={services} onSelectService={handleSelectService} />;
       case 'application':
-        return selectedService ? <ApplicationPage service={selectedService} profile={profile} wallet={wallet} onSubmit={handleApplicationSubmit} /> : <p>Service not selected.</p>;
+        return selectedService ? <ApplicationPage service={selectedService} profile={profile} wallet={wallet} onSubmit={handleApplicationSubmit} /> : <p>Service not selected. Please go back to the service catalog.</p>;
       case 'my-applications':
         return <MyApplicationsPage applications={applications} services={services} offices={MOCK_OFFICES} onPay={(app) => setAppToPay(app)} />;
       case 'nagarik-wallet':
@@ -704,6 +706,8 @@ export const CitizenPortal: React.FC = () => {
         return <CommunityImpactPage services={services} />;
       case 'profile-settings':
         return <ProfileSettingsPage profile={profile} dispatch={dispatch} />;
+      case 'notifications':
+        return <NotificationsPage />;
       case 'dashboard':
       default:
         return <Dashboard 
@@ -711,9 +715,8 @@ export const CitizenPortal: React.FC = () => {
                   applications={applications} 
                   services={services}
                   offices={MOCK_OFFICES}
-                  notifications={notifications}
+                  notifications={toasts}
                   onNavigate={handleNavigate}
-                  onOpenAi={() => setIsAiModalOpen(true)}
                   onQuickApply={handleQuickApply}
                 />;
     }
@@ -728,7 +731,6 @@ export const CitizenPortal: React.FC = () => {
         </div>
 
         {isQrModalOpen && <QrCodeModal user={profile} onClose={() => setIsQrModalOpen(false)} />}
-        {isAiModalOpen && <SathiAiModal services={services} onClose={() => setIsAiModalOpen(false)} />}
         {isUploadModalOpen && <UploadDocumentModal userId={profile.id} onClose={() => setIsUploadModalOpen(false)} onUpload={handleUploadDocument} />}
         {appToPay && <PaymentModal application={appToPay} service={services.find(s => s.id === appToPay.serviceId)} onPaymentSuccess={handlePaymentSuccess} onClose={() => setAppToPay(null)} />}
     </div>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// FIX: The CitizenPage type is defined in types.ts and should be imported from there directly.
 import { WalletDocument, DocumentType, Service, Application, CitizenPage } from '../../types';
 import { FileTextIcon, CheckCircleIcon, AlertTriangleIcon, XCircleIcon, FilePlusIcon, IdCardIcon, WalletIcon, CreditCardIcon, ShieldLockIcon, HistoryIcon, LandPlotIcon, HealthIcon, QrCodeIcon, BellIcon, BriefcaseIcon, CarIcon, UsersIcon, BookOpenIcon, ScaleIcon, SparklesIcon } from '../../components/icons';
 import { MOCK_PAYMENTS_DUE, MOCK_TRANSACTION_HISTORY } from '../../constants';
