@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useContext, useEffect, useReducer, useRef, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
 import { MOCK_CITIZEN_PROFILE, MOCK_APPLICATIONS } from '../constants';
@@ -28,6 +29,7 @@ type KioskAction =
     | { type: 'BACK_TO_DASHBOARD' }
     | { type: 'BACK_TO_CATEGORIES' }
     | { type: 'BACK_TO_SERVICE_LIST' }
+    | { type: 'VIEW_APPLICATIONS' }
     | { type: 'RESET' };
 
 const initialState: KioskState = {
@@ -65,6 +67,8 @@ function kioskReducer(state: KioskState, action: KioskAction): KioskState {
             return { ...state, screen: 'service_categories', selectedCategory: null, selectedService: null };
         case 'BACK_TO_SERVICE_LIST':
             return { ...state, screen: 'service_list', selectedService: null };
+        case 'VIEW_APPLICATIONS':
+            return { ...state, screen: 'my_applications' };
         case 'RESET':
             return initialState;
         default:
@@ -141,17 +145,25 @@ const LoginScreen: React.FC<{ t: any; loading: boolean; language: Language; hand
     const videoRef = useRef<HTMLVideoElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'scanned'>('idle');
+    const [scanProgress, setScanProgress] = useState(0);
 
-     useEffect(() => {
+    // FIX: useEffect to safely attach stream to video element once it's available
+    useEffect(() => {
+        if (stream && videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [stream]);
+
+    // Effect to manage the camera stream
+    useEffect(() => {
         let currentStream: MediaStream | null = null;
         if (authMethod === 'qr' && !loading) {
+            setScanStatus('scanning');
             navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-                .then(stream => {
-                    currentStream = stream;
-                    setStream(stream);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
+                .then(mediaStream => {
+                    currentStream = mediaStream;
+                    setStream(mediaStream);
                     setCameraError(null);
                 })
                 .catch(err => {
@@ -159,32 +171,53 @@ const LoginScreen: React.FC<{ t: any; loading: boolean; language: Language; hand
                     setCameraError("Camera access denied. Please enable camera permissions in your browser settings.");
                     setStream(null);
                 });
+        } else if (stream) {
+            // If we switch away from QR or start loading, stop the stream
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
         }
 
         return () => { // Cleanup function
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
             }
-             if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                setStream(null);
-            }
+            setScanStatus('idle');
+            setScanProgress(0);
         };
     }, [authMethod, loading]);
 
+    // Effect to manage the scanning flow timing
     useEffect(() => {
-        let scanTimeout: number;
-        if (authMethod === 'qr' && stream && !loading) {
-            // After 3 seconds of showing the camera, simulate a successful scan
-            scanTimeout = window.setTimeout(() => {
+        let scanInterval: number;
+        let loginTimeout: number;
+
+        if (scanStatus === 'scanning' && stream) {
+            const startTime = Date.now();
+            scanInterval = window.setInterval(() => {
+                const elapsedTime = Date.now() - startTime;
+                const progress = Math.min(100, (elapsedTime / 10000) * 100);
+                setScanProgress(progress);
+
+                if (progress >= 100) {
+                    clearInterval(scanInterval);
+                    setScanStatus('scanned');
+                }
+            }, 100); // update every 100ms for smooth progress
+        } else if (scanStatus === 'scanned') {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                setStream(null);
+            }
+            loginTimeout = window.setTimeout(() => {
                 handleLogin();
-            }, 3000);
+            }, 4000); // Show details for 4 seconds
         }
 
         return () => {
-            clearTimeout(scanTimeout);
+            clearInterval(scanInterval);
+            clearTimeout(loginTimeout);
         };
-    }, [authMethod, stream, loading, handleLogin]);
+    }, [scanStatus, stream, handleLogin]);
 
 
     return (
@@ -208,23 +241,47 @@ const LoginScreen: React.FC<{ t: any; loading: boolean; language: Language; hand
                     </div>
                 ) : (
                     <div className="h-64 flex flex-col items-center justify-center">
-                        {authMethod === 'qr' && (
-                            <div className="w-full h-full flex flex-col items-center justify-center">
-                                {cameraError ? (
-                                    <div className="flex flex-col items-center justify-center text-center text-red-300">
-                                        <QrCodeIcon className="w-24 h-24 text-red-400/50 mb-4" />
-                                        <p>{cameraError}</p>
-                                    </div>
-                                ) : stream ? (
-                                     <div className="w-full h-full relative rounded-lg overflow-hidden">
-                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                                        <div className="absolute inset-x-0 bottom-0 bg-black/40 p-2">
-                                            <p className="text-white/90 text-center text-sm font-semibold animate-pulse">{language === 'en' ? 'Scanning...' : 'स्क्यान गर्दै...'}</p>
+                         {authMethod === 'qr' && (
+                            <div className={`w-full h-full flex flex-col items-center justify-center relative rounded-lg overflow-hidden ${scanStatus === 'scanned' ? 'animate-flash-success' : ''}`}>
+                                {scanStatus === 'scanning' && (
+                                    <>
+                                        {cameraError ? (
+                                            <div className="flex flex-col items-center justify-center text-center text-red-300">
+                                                <QrCodeIcon className="w-24 h-24 text-red-400/50 mb-4" />
+                                                <p>{cameraError}</p>
+                                            </div>
+                                        ) : stream ? (
+                                             <>
+                                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/20 flex flex-col justify-between">
+                                                    <div className="relative h-full">
+                                                        <div className="absolute top-0 left-0 w-full h-1.5 bg-red-400 animate-scan-line"></div>
+                                                    </div>
+                                                    <div className="p-3 bg-black/50">
+                                                        <p className="text-white/90 text-center text-sm font-semibold animate-pulse">{language === 'en' ? 'Scanning... Hold your QR code steady.' : 'स्क्यान गर्दै... आफ्नो QR कोड स्थिर राख्नुहोस्।'}</p>
+                                                        <div className="w-full bg-white/20 rounded-full h-2 mt-2">
+                                                            <div className="bg-green-400 h-2 rounded-full progress-bar-inner" style={{ width: `${scanProgress}%` }}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        )}
+                                    </>
+                                )}
+                                {scanStatus === 'scanned' && (
+                                    <div className="flex flex-col items-center justify-center text-center animate-fade-in w-full h-full bg-black/30">
+                                        <CheckCircleIcon className="w-20 h-20 text-green-300 mb-4" />
+                                        <h3 className="text-2xl font-bold">Scan Successful</h3>
+                                        <div className="mt-4 bg-white/10 p-4 rounded-lg flex items-center space-x-4">
+                                            <img className="w-16 h-16 rounded-full" src={`https://ui-avatars.com/api/?name=${MOCK_CITIZEN_PROFILE.name.replace(' ','+')}&background=random`} alt="User avatar" />
+                                            <div>
+                                                <p className="text-xl font-semibold">{MOCK_CITIZEN_PROFILE.name}</p>
+                                                <p className="text-white/70">Citizen ID: ...cdef</p>
+                                            </div>
                                         </div>
-                                        <div className="absolute top-0 left-0 w-full h-1 bg-red-400 animate-scan-line"></div>
                                     </div>
-                                ) : (
-                                    <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
                                 )}
                             </div>
                         )}
@@ -350,7 +407,7 @@ export const KioskPortal: React.FC = () => {
                                 <FileTextIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
                                 <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'Apply for Service' : 'सेवाको लागि आवेदन दिनुहोस्'}</h2>
                             </button>
-                            <button className="kiosk-card group">
+                            <button onClick={() => kioskDispatch({ type: 'VIEW_APPLICATIONS' })} className="kiosk-card group">
                                 <UsersIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform"/>
                                 <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'My Applications' : 'मेरो आवेदनहरू'}</h2>
                             </button>
@@ -359,6 +416,49 @@ export const KioskPortal: React.FC = () => {
                                 <h2 className="text-2xl font-bold mt-4">{language === 'en' ? 'Logout' : 'लगआउट'}</h2>
                             </button>
                         </div>
+                    </div>
+                );
+            case 'my_applications':
+                if (!currentUser) return null;
+                const userApplications = appState.applications.filter(app => app.userId === currentUser.id);
+                return (
+                    <div className="text-white kiosk-screen p-8 lg:p-12 animate-fade-in">
+                        <button onClick={() => kioskDispatch({ type: 'BACK_TO_DASHBOARD' })} className="kiosk-back-button">{t.backButton}</button>
+                        <h1 className="text-5xl font-extrabold text-center">{language === 'en' ? 'My Applications' : 'मेरो आवेदनहरू'}</h1>
+                        {userApplications.length > 0 ? (
+                            <div className="mt-12 max-w-4xl mx-auto space-y-6 overflow-y-auto max-h-[70vh] p-2">
+                                {userApplications.sort((a,b) => b.submittedAt.getTime() - a.submittedAt.getTime()).map(app => {
+                                    const service = appState.services.find(s => s.id === app.serviceId);
+                                    const status = app.status;
+                                    const statusColor = 
+                                        status === 'Approved' || status === 'Called' ? 'bg-green-500/80' : 
+                                        status === 'Pending Payment' ? 'bg-yellow-500/80' :
+                                        status === 'Rejected' ? 'bg-red-500/80' :
+                                        'bg-blue-500/80';
+                                    
+                                    return (
+                                        <div key={app.id} className="kiosk-card text-left p-6">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h2 className="text-2xl font-bold">{service?.name || 'Unknown Service'}</h2>
+                                                    <p className="text-white/70 mt-1">Submitted: {app.submittedAt.toLocaleDateString()}</p>
+                                                </div>
+                                                <span className={`px-3 py-1 text-sm font-bold rounded-full self-start ${statusColor}`}>
+                                                    {status}
+                                                </span>
+                                            </div>
+                                            <div className="border-t border-white/20 my-4"></div>
+                                            <p className="text-lg">Token Number: <span className="font-bold tracking-widest">{app.token || 'N/A'}</span></p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center mt-12">
+                                <FileTextIcon className="w-24 h-24 text-white/50 mx-auto mb-4" />
+                                <p className="text-xl text-white/80">You have not submitted any applications yet.</p>
+                            </div>
+                        )}
                     </div>
                 );
             case 'service_categories':
@@ -557,7 +657,18 @@ export const KioskPortal: React.FC = () => {
                 }
                 .animate-scan-line {
                     animation: scan-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-                    box-shadow: 0 0 10px 2px #C8102E;
+                    box-shadow: 0 0 20px 4px #C8102E;
+                }
+                .progress-bar-inner {
+                    transition: width 0.1s linear;
+                }
+                @keyframes flash-success {
+                    0% { box-shadow: inset 0 0 0 0px rgba(74, 222, 128, 0); }
+                    50% { box-shadow: inset 0 0 0 12px rgba(74, 222, 128, 0.8); }
+                    100% { box-shadow: inset 0 0 0 0px rgba(74, 222, 128, 0); }
+                }
+                .animate-flash-success {
+                    animation: flash-success 0.6s ease-out;
                 }
             `}</style>
 

@@ -3,10 +3,11 @@ import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Service, Application, WalletDocument, Profile, Notification, Office } from '../types';
 import { MOCK_OFFICES } from '../constants';
-import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon, BellIcon, BuildingIcon } from '../components/icons';
+import { NepalFlagIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, UsersIcon, FileCheckIcon, HourglassIcon, BriefcaseIcon, EditIcon, SparklesIcon, TrendingUpIcon, BellIcon, BuildingIcon, WalletIcon } from '../components/icons';
 import ApplicationDetailModal from '../components/ApplicationDetailModal';
 import ServiceEditorModal from '../components/ServiceEditorModal';
 import UserEditorModal from '../components/UserEditorModal';
+import DigitalWalletPage from '../components/DigitalWalletPage';
 
 const BarChart: React.FC<{ title: string, data: { label: string, value: number }[] }> = ({ title, data }) => {
     const maxValue = Math.max(...data.map(d => d.value), 1);
@@ -373,23 +374,15 @@ const AdminPortal: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
     const { applications, services, allCitizenProfiles, allWalletDocuments } = state;
     
-    const initialTab = (window as any).GOVFLOW_INITIAL_ADMIN_TAB || 'applications';
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const [activeTab, setActiveTab] = useState('applications');
     
-    useEffect(() => {
-        // Reset the global after using it
-        if ((window as any).GOVFLOW_INITIAL_ADMIN_TAB) {
-            (window as any).GOVFLOW_INITIAL_ADMIN_TAB = undefined;
-        }
-    }, []);
-
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || '');
-    const [selectedUserId, setSelectedUserId] = useState<string>(allCitizenProfiles[0]?.id || '');
     const [selectedApp, setSelectedApp] = useState<Application | null>(null);
     const [isServiceEditorOpen, setIsServiceEditorOpen] = useState(false);
     const [editingService, setEditingService] = useState<Service | null>(null);
     const [isUserEditorOpen, setIsUserEditorOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Profile | null>(null);
+    const [viewingCitizenWallet, setViewingCitizenWallet] = useState<Profile | null>(null);
     
     const filteredApplications = useMemo(() => 
         applications.filter(app => app.serviceId === selectedServiceId),
@@ -401,50 +394,13 @@ const AdminPortal: React.FC = () => {
         [filteredApplications]
     );
 
-    const selectedUserDocs = useMemo(() => 
-        allWalletDocuments.filter(doc => doc.user_id === selectedUserId),
-        [allWalletDocuments, selectedUserId]
-    );
-    
     const citizensWithDocCount = useMemo(() => {
         return allCitizenProfiles.map(profile => {
             const docCount = allWalletDocuments.filter(doc => doc.user_id === profile.id).length;
-            return { ...profile, docCount };
+            const pendingCount = allWalletDocuments.filter(doc => doc.user_id === profile.id && doc.verificationStatus === 'pending').length;
+            return { ...profile, docCount, pendingCount };
         });
     }, [allCitizenProfiles, allWalletDocuments]);
-    
-    const kpis = useMemo(() => {
-        const activeUsers = allCitizenProfiles.length;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const processedToday = applications.filter(app => {
-            const lastStatus = app.statusHistory[app.statusHistory.length - 1];
-            return (lastStatus.status === 'Approved' || lastStatus.status === 'Called') && lastStatus.timestamp >= today;
-        }).length;
-
-        const approvedApps = applications.filter(app => 
-            app.statusHistory.some(h => h.status === 'Approved')
-        );
-
-        let avgApprovalTime = 'N/A';
-        if (approvedApps.length > 0) {
-            const totalTime = approvedApps.reduce((acc, app) => {
-                const submittedTime = app.statusHistory.find(h => h.status === 'Submitted')?.timestamp;
-                const approvedTime = app.statusHistory.find(h => h.status === 'Approved')?.timestamp;
-                if (submittedTime && approvedTime) {
-                    return acc + (approvedTime.getTime() - submittedTime.getTime());
-                }
-                return acc;
-            }, 0);
-            const avgTimeMs = totalTime / approvedApps.length;
-            const avgTimeDays = (avgTimeMs / (1000 * 60 * 60 * 24)).toFixed(1);
-            avgApprovalTime = `${avgTimeDays} days`;
-        }
-        
-        return { activeUsers, processedToday, avgApprovalTime };
-    }, [allCitizenProfiles, applications]);
-
 
     const handleCallNext = () => {
         const nextInQueue = queue[0];
@@ -488,6 +444,11 @@ const AdminPortal: React.FC = () => {
         { name: 'Citizens', id: 'citizens', icon: UsersIcon },
         { name: 'Analytics', id: 'analytics', icon: TrendingUpIcon },
     ];
+
+    const citizenWalletDocs = useMemo(() => {
+        if (!viewingCitizenWallet) return [];
+        return allWalletDocuments.filter(doc => doc.user_id === viewingCitizenWallet.id);
+    }, [viewingCitizenWallet, allWalletDocuments]);
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -559,11 +520,79 @@ const AdminPortal: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                 {activeTab === 'citizens' && (
+                    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
+                        <h2 className="text-2xl font-bold mb-4">Citizen Management</h2>
+                        <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Documents</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {citizensWithDocCount.map(citizen => (
+                                        <tr key={citizen.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{citizen.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{citizen.email}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                {citizen.docCount} total
+                                                {citizen.pendingCount > 0 && 
+                                                    <span className="ml-2 text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">{citizen.pendingCount} pending</span>
+                                                }
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                <button onClick={() => setViewingCitizenWallet(citizen)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200">View Wallet</button>
+                                                <button onClick={() => openUserEditor(citizen)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200">Edit</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
                 
                 {activeTab === 'notifications' && <NotificationPortal />}
 
                 {activeTab === 'analytics' && <AnalyticsPage applications={applications} services={services} />}
-                {/* Other tabs can be added here */}
+                
+                 {activeTab === 'services' && (
+                     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-md">
+                        <div className="flex justify-between items-center mb-4">
+                             <h2 className="text-2xl font-bold">Service Configuration</h2>
+                             <button onClick={() => openServiceEditor(null)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition">Create Service</button>
+                        </div>
+                         <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                               <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Category</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Fee</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {services.map(service => (
+                                        <tr key={service.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{service.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">{service.category}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">NPR {service.fee}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button onClick={() => openServiceEditor(service)} className="text-blue-600 hover:underline">Edit</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                         </div>
+                     </div>
+                 )}
 
             </main>
              {selectedApp && (
@@ -587,6 +616,15 @@ const AdminPortal: React.FC = () => {
                     onSave={handleSaveUser}
                     onClose={() => setIsUserEditorOpen(false)}
                 />
+            )}
+            {viewingCitizenWallet && (
+                 <DigitalWalletPage
+                    citizen={viewingCitizenWallet}
+                    walletDocuments={citizenWalletDocs}
+                    onVerify={handleVerify}
+                    onReject={handleReject}
+                    onClose={() => setViewingCitizenWallet(null)}
+                 />
             )}
         </div>
     );

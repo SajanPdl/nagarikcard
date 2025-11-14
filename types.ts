@@ -130,7 +130,7 @@ export interface Notification {
   audit: NotificationAudit[];
 }
 
-export type KioskScreen = 'login' | 'dashboard' | 'service_categories' | 'service_list' | 'application' | 'payment' | 'receipt' | 'goodbye';
+export type KioskScreen = 'login' | 'dashboard' | 'service_categories' | 'service_list' | 'application' | 'payment' | 'receipt' | 'goodbye' | 'my_applications';
 export type Language = 'en' | 'np';
 
 export type Theme = 'light' | 'dark';
